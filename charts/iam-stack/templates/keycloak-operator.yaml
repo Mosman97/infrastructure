@@ -3,36 +3,203 @@ kind: ServiceAccount
 metadata:
   name: keycloak-operator
   namespace: {{ .Values.namespace.name }}
+  labels:
+    app.kubernetes.io/name: keycloak-operator
+    app.kubernetes.io/version: {{ .Values.keycloak.operator.version }}
 ---
+# ClusterRole for OpenShift ingress config (optional, but part of official)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: keycloak-operator-{{ .Values.namespace.name }}
+  name: keycloak-operator-clusterrole-{{ .Values.namespace.name }}
+  labels:
+    app.kubernetes.io/name: keycloak-operator
 rules:
-- apiGroups: ["k8s.keycloak.org"]
-  resources: ["keycloaks", "keycloaks/status", "keycloaks/finalizers", "keycloakrealmimports", "keycloakrealmimports/status", "keycloakrealmimports/finalizers"]
-  verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
-- apiGroups: [""]
-  resources: ["services", "endpoints", "persistentvolumeclaims", "events", "configmaps", "secrets", "serviceaccounts"]
-  verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
-- apiGroups: ["apps"]
-  resources: ["statefulsets"]
-  verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
-- apiGroups: ["batch"]
-  resources: ["jobs"]
-  verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
-- apiGroups: ["networking.k8s.io"]
-  resources: ["ingresses", "networkpolicies"]
-  verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+---
+# ClusterRole for Keycloak Controller
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: keycloakcontroller-cluster-role-{{ .Values.namespace.name }}
+  labels:
+    app.kubernetes.io/name: keycloak-operator
+    app.kubernetes.io/version: {{ .Values.keycloak.operator.version }}
+rules:
+- apiGroups:
+  - k8s.keycloak.org
+  resources:
+  - keycloaks
+  - keycloaks/status
+  - keycloaks/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - update
+  - create
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+---
+# ClusterRole for KeycloakRealmImport Controller
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: keycloakrealmimportcontroller-cluster-role-{{ .Values.namespace.name }}
+  labels:
+    app.kubernetes.io/name: keycloak-operator
+    app.kubernetes.io/version: {{ .Values.keycloak.operator.version }}
+rules:
+- apiGroups:
+  - k8s.keycloak.org
+  resources:
+  - keycloakrealmimports
+  - keycloakrealmimports/status
+  - keycloakrealmimports/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - update
+  - create
+  - delete
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+# ClusterRoleBindings
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloak-operator-clusterrole-binding-{{ .Values.namespace.name }}
+  labels:
+    app.kubernetes.io/name: keycloak-operator
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: keycloak-operator-clusterrole-{{ .Values.namespace.name }}
+subjects:
+- kind: ServiceAccount
+  name: keycloak-operator
+  namespace: {{ .Values.namespace.name }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: keycloak-operator-{{ .Values.namespace.name }}
+  name: keycloakcontroller-cluster-role-binding-{{ .Values.namespace.name }}
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: keycloak-operator-{{ .Values.namespace.name }}
+  apiGroup: rbac.authorization.k8s.io
+  name: keycloakcontroller-cluster-role-{{ .Values.namespace.name }}
+subjects:
+- kind: ServiceAccount
+  name: keycloak-operator
+  namespace: {{ .Values.namespace.name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloakrealmimportcontroller-cluster-role-binding-{{ .Values.namespace.name }}
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: keycloakrealmimportcontroller-cluster-role-{{ .Values.namespace.name }}
 subjects:
 - kind: ServiceAccount
   name: keycloak-operator
