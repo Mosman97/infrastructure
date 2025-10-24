@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgresql-db
+  namespace: iam-system
 spec:
   serviceName: postgresql-db-service
   selector:
@@ -29,22 +30,23 @@ spec:
             - name: POSTGRES_DB
               value: keycloak
   volumeClaimTemplates:
-  - metadata:
-      name: postgres-storage
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-db  # muss mit spec.db.host in example-kc.yaml übereinstimmen
+  name: postgres-db
+  namespace: iam-system
 spec:
   selector:
     app: postgresql-db
-  type: ClusterIP  # LoadBalancer nur wenn externe Erreichbarkeit nötig
+  type: ClusterIP
   ports:
-  - port: 5432
-    targetPort: 5432
+    - port: 5432
+      targetPort: 5432
