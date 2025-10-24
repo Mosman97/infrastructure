@@ -1,0 +1,19 @@
+# Secrets - NIEMALS committen!
+**/secrets.yaml
+!**/secrets.yaml.template
+
+# TLS Zertifikate
+*.key
+*.crt
+*.pem
+
+# Lokale Configs
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store

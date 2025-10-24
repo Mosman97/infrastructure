@@ -6,7 +6,7 @@ metadata:
 spec:
   project: iam
   source:
-    repoURL: "https://zta-gitlab.puls-security.de/zte/dev/components/iam"
+    repoURL: "https://github.com/Mosman97/infrastructure.git"
     targetRevision: main
     path: apps/iam
   destination:
