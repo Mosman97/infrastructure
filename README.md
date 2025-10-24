@@ -14,13 +14,13 @@ Kubernetes-basiertes Identity and Access Management Setup mit Keycloak.
 ### Mit ArgoCD
 
 ```bash
-kubectl apply -f apps-argo/iam-stack.yaml
+kubectl apply -f argocd/applications/iam-application.yaml
 ```
 
 ### Mit kubectl
 
 ```bash
-kubectl apply -k apps/iam
+kubectl apply -k deployments/iam
 ```
 
 ## Zugriff
@@ -38,12 +38,19 @@ kubectl apply -k apps/iam
 ## Struktur
 
 ```
-apps/
-├── iam/              # Hauptdeployment (alle Komponenten)
-├── keycloak/         # Keycloak Konfiguration
-├── keycloak-operator/# Operator Konfiguration
-└── postgres/         # PostgreSQL Datenbank
+certificates/          # TLS-Zertifikate
+├── keycloak.local.crt
+└── keycloak.local.key
 
-apps-argo/
-└── iam-stack.yaml    # ArgoCD Application
+argocd/               # GitOps-Konfiguration
+├── applications/     # ArgoCD Applications
+└── projects/         # ArgoCD Projects
+
+deployments/          # Produktive Deployments
+└── iam/             # IAM Stack (Keycloak + PostgreSQL)
+
+operator/            # Keycloak Operator Konfiguration
+├── helm-kustomization.yaml
+├── secrets-template.yaml
+└── values.yaml
 ```

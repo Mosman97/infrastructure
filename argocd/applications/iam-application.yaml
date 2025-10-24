@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: "https://github.com/Mosman97/infrastructure.git"
     targetRevision: main
-    path: apps/iam
+    path: deployments/iam
   destination:
     server: https://kubernetes.default.svc
     namespace: iam-system

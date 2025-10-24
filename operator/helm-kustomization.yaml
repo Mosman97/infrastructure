@@ -10,8 +10,7 @@ helmCharts:
     valuesFile: values.yaml
 
 resources:
-  - ../keycloak/example-kc.yaml
-  - secrets.yaml
+  - secrets-template.yaml
 
 secretGenerator:
   - name: keycloak-db-secret
@@ -20,5 +19,5 @@ secretGenerator:
       - password=testpassword
   - name: example-tls-secret
     files:
-      - tls.crt=../postgres/certificate.pem
-      - tls.key=../postgres/key.pem
+      - tls.crt=../certificates/keycloak.local.crt
+      - tls.key=../certificates/keycloak.local.key
