@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: iam-stack
+  namespace: argocd
+spec:
+  project: iam
+  source:
+    repoURL: "https://zta-gitlab.puls-security.de/zte/dev/components/iam"
+    targetRevision: main
+    path: apps/iam
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: iam-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

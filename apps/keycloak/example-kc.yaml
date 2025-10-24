@@ -1,0 +1,31 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  db:
+    vendor: postgres
+    host: postgres-db
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  hostname:
+    hostname: keycloak.local
+    strict: false
+  ingress:
+    enabled: false
+  proxy:
+    headers: xforwarded
+  additionalOptions:
+    - name: bootstrap-admin-username
+      value: admin
+    - name: bootstrap-admin-password
+      value: admin123
+    - name: http-enabled
+      value: "true"
+    - name: hostname-strict-https
+      value: "false"

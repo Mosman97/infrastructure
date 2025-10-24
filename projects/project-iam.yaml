@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: iam
+  namespace: argocd
+spec:
+  sourceRepos:
+    - '*'   # fürs erste unkritisch, später auf dein Repo einschränken
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
