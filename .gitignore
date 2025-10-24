@@ -1,8 +1,4 @@
-# Secrets - NIEMALS committen!
-**/secrets.yaml
-!**/secrets.yaml.template
-
-# TLS Zertifikate
+# TLS Zertifikate (lokal generiert)
 *.key
 *.crt
 *.pem
