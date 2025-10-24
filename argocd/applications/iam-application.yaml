@@ -8,7 +8,10 @@ spec:
   source:
     repoURL: "https://github.com/Mosman97/infrastructure.git"
     targetRevision: main
-    path: deployments/iam
+    path: charts/iam-stack
+    helm:
+      valueFiles:
+      - values-dev.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: iam-system

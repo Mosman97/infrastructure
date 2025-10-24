@@ -1,0 +1,6 @@
+apiVersion: v2
+name: iam-stack
+description: Keycloak IAM Stack with CloudNativePG
+type: application
+version: 1.0.0
+appVersion: "26.4.2"

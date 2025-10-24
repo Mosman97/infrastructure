@@ -1,0 +1,30 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak-instance
+  namespace: {{ .Values.namespace.name }}
+spec:
+  instances: {{ .Values.keycloak.replicas }}
+  image: {{ .Values.keycloak.image.registry }}/{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}
+  startOptimized: {{ .Values.keycloak.startOptimized }}
+  db:
+    vendor: postgres
+    host: keycloak-db-rw
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  hostname:
+    hostname: {{ .Values.keycloak.hostname }}
+    strict: false
+  ingress:
+    enabled: false
+  proxy:
+    headers: xforwarded
+  additionalOptions:
+    - name: http-enabled
+      value: {{ .Values.keycloak.httpEnabled | quote }}
+    - name: hostname-strict-https
+      value: "false"

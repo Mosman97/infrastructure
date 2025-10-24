@@ -1,0 +1,41 @@
+# Development values for iam-stack
+namespace:
+  name: iam-system
+
+keycloak:
+  replicas: 2
+  image:
+    registry: quay.io
+    repository: keycloak/keycloak
+    tag: "26.4.2"
+  startOptimized: false
+  httpEnabled: true
+  hostname: keycloak.local
+  operator:
+    version: "26.4.2"
+
+postgres:
+  instances: 3
+  image: ghcr.io/cloudnative-pg/postgresql:18
+  database: keycloak
+  username: testuser
+  password: testpassword
+  storage:
+    size: 10Gi
+    storageClass: hostpath
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  parameters:
+    max_connections: "200"
+    shared_buffers: "256MB"
+    effective_cache_size: "1GB"
+
+ingress:
+  enabled: true
+  className: nginx
+  hostname: keycloak.local

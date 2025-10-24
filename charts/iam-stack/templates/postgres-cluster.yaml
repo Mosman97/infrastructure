@@ -1,0 +1,45 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: keycloak-db
+  namespace: {{ .Values.namespace.name }}
+spec:
+  instances: {{ .Values.postgres.instances }}
+  imageName: {{ .Values.postgres.image }}
+  
+  postgresql:
+    parameters:
+      max_connections: {{ .Values.postgres.parameters.max_connections | quote }}
+      shared_buffers: {{ .Values.postgres.parameters.shared_buffers | quote }}
+      effective_cache_size: {{ .Values.postgres.parameters.effective_cache_size | quote }}
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "2621kB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+  
+  bootstrap:
+    initdb:
+      database: {{ .Values.postgres.database }}
+      owner: {{ .Values.postgres.username }}
+      secret:
+        name: keycloak-db-secret
+  
+  storage:
+    size: {{ .Values.postgres.storage.size }}
+    storageClass: {{ .Values.postgres.storage.storageClass }}
+  
+  monitoring:
+    enablePodMonitor: false
+  
+  resources:
+    requests:
+      memory: {{ .Values.postgres.resources.requests.memory | quote }}
+      cpu: {{ .Values.postgres.resources.requests.cpu | quote }}
+    limits:
+      memory: {{ .Values.postgres.resources.limits.memory | quote }}
+      cpu: {{ .Values.postgres.resources.limits.cpu | quote }}
