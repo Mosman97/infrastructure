@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: postgresql-db
-          image: postgres:15
+          image: postgres:17
           volumeMounts:
             - mountPath: /data
               name: postgres-storage
