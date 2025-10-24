@@ -10,8 +10,8 @@ resources:
   - secrets-credentials.yaml
   
   # Keycloak Operator
-  - https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.0.0/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
-  - https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.0.0/kubernetes/kubernetes.yml
+  - https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.0.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+  - https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.0.4/kubernetes/kubernetes.yml
   
   # Keycloak Instance
   - keycloak-instance.yaml
