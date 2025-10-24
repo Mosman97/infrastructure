@@ -8,7 +8,7 @@ spec:
   startOptimized: false
   db:
     vendor: postgres
-    host: postgres-db
+    host: keycloak-db-rw
     usernameSecret:
       name: keycloak-db-secret
       key: username
