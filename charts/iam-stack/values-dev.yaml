@@ -21,30 +21,25 @@ postgres:
   username: testuser
   password: testpassword
   
-  # High Availability
-  primaryUpdateStrategy: unsupervised  # oder supervised für manuelles Failover
-  primaryUpdateMethod: switchover  # switchover oder restart
-  switchoverDelay: 60  # Sekunden
-  failoverDelay: 0  # 0 = sofortiges Failover
-  maxSyncReplicas: 0  # 0 = async replication
+  primaryUpdateStrategy: unsupervised  
+  primaryUpdateMethod: switchover 
+  switchoverDelay: 60 
+  failoverDelay: 0  
+  maxSyncReplicas: 0 
   minSyncReplicas: 0
   
-  # Security
   enableSuperuserAccess: false
   postgresUID: 26
   postgresGID: 26
   
-  # PodDisruptionBudget
   enablePDB: true
   
-  # Anti-Affinity
   affinity:
     enablePodAntiAffinity: true
     topologyKey: kubernetes.io/hostname
-    podAntiAffinityType: preferred  # preferred oder required
+    podAntiAffinityType: preferred 
   
-  # Logging
-  logLevel: info  # error, warning, info, debug, trace
+  logLevel: info
   
   storage:
     size: 10Gi

@@ -6,8 +6,7 @@ metadata:
 spec:
   instances: {{ .Values.postgres.instances }}
   imageName: {{ .Values.postgres.image }}
-  
-  # High Availability Settings
+
   primaryUpdateStrategy: {{ .Values.postgres.primaryUpdateStrategy }}
   primaryUpdateMethod: {{ .Values.postgres.primaryUpdateMethod }}
   switchoverDelay: {{ .Values.postgres.switchoverDelay }}
@@ -15,21 +14,17 @@ spec:
   maxSyncReplicas: {{ .Values.postgres.maxSyncReplicas }}
   minSyncReplicas: {{ .Values.postgres.minSyncReplicas }}
   
-  # Security
   enableSuperuserAccess: {{ .Values.postgres.enableSuperuserAccess }}
   postgresUID: {{ .Values.postgres.postgresUID }}
   postgresGID: {{ .Values.postgres.postgresGID }}
   
-  # PodDisruptionBudget
   enablePDB: {{ .Values.postgres.enablePDB }}
   
-  # Anti-Affinity (kein Primary + Replica auf gleicher Node)
   affinity:
     enablePodAntiAffinity: {{ .Values.postgres.affinity.enablePodAntiAffinity }}
     topologyKey: {{ .Values.postgres.affinity.topologyKey }}
     podAntiAffinityType: {{ .Values.postgres.affinity.podAntiAffinityType }}
   
-  # Logging
   logLevel: {{ .Values.postgres.logLevel }}
   
   postgresql:
