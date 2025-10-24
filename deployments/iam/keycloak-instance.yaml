@@ -4,6 +4,7 @@ metadata:
   name: keycloak-instance
 spec:
   instances: 2
+  image: quay.io/keycloak/keycloak:26.4.2
   db:
     vendor: postgres
     host: postgres-db
