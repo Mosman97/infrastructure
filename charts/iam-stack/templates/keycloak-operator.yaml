@@ -7,21 +7,6 @@ metadata:
     app.kubernetes.io/name: keycloak-operator
     app.kubernetes.io/version: {{ .Values.keycloak.operator.version }}
 ---
-# ClusterRole for OpenShift ingress config (optional, but part of official)
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: keycloak-operator-clusterrole-{{ .Values.namespace.name }}
-  labels:
-    app.kubernetes.io/name: keycloak-operator
-rules:
-- apiGroups:
-  - config.openshift.io
-  resources:
-  - ingresses
-  verbs:
-  - get
----
 # ClusterRole for Keycloak Controller
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -164,21 +149,6 @@ rules:
   - watch
 ---
 # ClusterRoleBindings
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: keycloak-operator-clusterrole-binding-{{ .Values.namespace.name }}
-  labels:
-    app.kubernetes.io/name: keycloak-operator
-roleRef:
-  kind: ClusterRole
-  apiGroup: rbac.authorization.k8s.io
-  name: keycloak-operator-clusterrole-{{ .Values.namespace.name }}
-subjects:
-- kind: ServiceAccount
-  name: keycloak-operator
-  namespace: {{ .Values.namespace.name }}
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
