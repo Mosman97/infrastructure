@@ -55,7 +55,7 @@ postgres:
       cpu: "500m"
     limits:
       memory: "1Gi"
-      cpu: "1000m"
+      cpu: "1"
   parameters:
     max_connections: "200"
     shared_buffers: "256MB"
