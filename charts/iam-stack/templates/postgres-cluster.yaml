@@ -51,6 +51,9 @@ spec:
     initdb:
       database: {{ .Values.postgres.database }}
       owner: {{ .Values.postgres.username }}
+      encoding: UTF8
+      localeCType: C
+      localeCollate: C
       secret:
         name: keycloak-db-secret
   
