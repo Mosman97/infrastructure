@@ -1,15 +1,15 @@
-# Development values for iam-stack
+# Production values for iam-stack
 namespace:
   name: iam-system
 
 logging:
-  enabled: false
-  format: text    
+  enabled: true   
+  format: json    
   keycloak:
     level: INFO
   postgres:
-    statement: none         
-    minDuration: -1           
+    statement: ddl              
+    minDuration: 1000          
 
 keycloak:
   replicas: 2

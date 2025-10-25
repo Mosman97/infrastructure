@@ -28,3 +28,9 @@ spec:
       value: {{ .Values.keycloak.httpEnabled | quote }}
     - name: hostname-strict-https
       value: "false"
+{{- if .Values.logging.enabled }}
+    - name: log-level
+      value: {{ .Values.logging.keycloak.level | quote }}
+    - name: log-console-output
+      value: {{ .Values.logging.format | quote }}
+{{- end }}
