@@ -11,7 +11,7 @@ spec:
     path: charts/iam-stack
     helm:
       valueFiles:
-      - values-dev.yaml
+      - values-prod.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: iam-system
