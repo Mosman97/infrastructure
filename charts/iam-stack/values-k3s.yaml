@@ -22,6 +22,14 @@ keycloak:
   operator:
     version: "26.4.2"
   
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+  
   init:
     enabled: true
     image: badouralix/curl-jq:latest

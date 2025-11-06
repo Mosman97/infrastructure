@@ -7,6 +7,13 @@ spec:
   instances: {{ .Values.keycloak.replicas }}
   image: {{ .Values.keycloak.image.registry }}/{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}
   startOptimized: {{ .Values.keycloak.startOptimized }}
+  resources:
+    requests:
+      memory: {{ .Values.keycloak.resources.requests.memory }}
+      cpu: {{ .Values.keycloak.resources.requests.cpu }}
+    limits:
+      memory: {{ .Values.keycloak.resources.limits.memory }}
+      cpu: {{ .Values.keycloak.resources.limits.cpu }}
   http:
     httpEnabled: {{ .Values.keycloak.httpEnabled }}
   db:

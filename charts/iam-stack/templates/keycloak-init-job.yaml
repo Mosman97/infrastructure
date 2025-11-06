@@ -154,6 +154,14 @@ spec:
       - name: keycloak-init
         image: {{ .Values.keycloak.init.image }}
         command: ["/bin/sh", "/scripts/init.sh"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 65534
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
         env:
         - name: KEYCLOAK_ADMIN
           valueFrom:
