@@ -2,13 +2,13 @@ namespace:
   name: iam-system
 
 logging:
-  enabled: true   
-  format: json    
+  enabled: false
+  format: text    
   keycloak:
     level: INFO
   postgres:
-    statement: ddl              
-    minDuration: 1000          
+    statement: none         
+    minDuration: -1           
 
 keycloak:
   replicas: 2
@@ -21,6 +21,29 @@ keycloak:
   hostname: keycloak.local
   operator:
     version: "26.4.2"
+  
+  # Admin Credentials für Keycloak
+  admin:
+    username: admin
+    password: admin123
+  
+  # Automatische Initialisierung beim Deployment
+  init:
+    enabled: true
+    image: badouralix/curl-jq:latest
+    
+    # Realm Konfiguration
+    realm:
+      name: myrealm
+      displayName: "My Application Realm"
+    
+    # Standard User der automatisch angelegt wird
+    user:
+      username: eric.hans
+      email: eric.hans@example.com
+      firstName: Eric
+      lastName: Hans
+      password: password123  # Ändere das in Production!
 
 postgres:
   instances: 3
@@ -51,7 +74,7 @@ postgres:
   
   storage:
     size: 10Gi
-    storageClass: hostpath
+    storageClass: local-path  # k3s default StorageClass
   resources:
     requests:
       memory: "512Mi"
@@ -66,5 +89,5 @@ postgres:
 
 ingress:
   enabled: true
-  className: nginx
+  className: traefik  # k3s default Ingress Controller
   hostname: keycloak.local
