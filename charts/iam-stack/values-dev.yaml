@@ -22,11 +22,6 @@ keycloak:
   operator:
     version: "26.4.2"
   
-  # Admin Credentials für Keycloak
-  admin:
-    username: admin
-    password: admin123
-  
   # Automatische Initialisierung beim Deployment
   init:
     enabled: true
