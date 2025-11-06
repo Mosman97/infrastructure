@@ -1,0 +1,189 @@
+{{- if .Values.keycloak.init.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-init-script
+  namespace: {{ .Values.namespace.name }}
+data:
+  init.sh: |
+    #!/bin/sh
+    set -e
+    
+    echo "Waiting for Keycloak to be ready..."
+    
+    # Warte bis Keycloak bereit ist
+    MAX_RETRIES=60
+    RETRY_COUNT=0
+    
+    until curl -sf http://keycloak-instance-service:8080 > /dev/null 2>&1; do
+      RETRY_COUNT=$((RETRY_COUNT + 1))
+      if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+        echo "Keycloak did not become ready in time"
+        exit 1
+      fi
+      echo "Waiting for Keycloak... (Attempt $RETRY_COUNT/$MAX_RETRIES)"
+      sleep 5
+    done
+    
+    echo "Keycloak is ready! Starting initialization..."
+    
+    # Admin Token holen
+    ADMIN_TOKEN=$(curl -s -X POST "http://keycloak-instance-service:8080/realms/master/protocol/openid-connect/token" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "username=${KEYCLOAK_ADMIN}" \
+      -d "password=${KEYCLOAK_ADMIN_PASSWORD}" \
+      -d "grant_type=password" \
+      -d "client_id=admin-cli" | jq -r '.access_token')
+    
+    if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" == "null" ]; then
+      echo "Failed to get admin token"
+      exit 1
+    fi
+    
+    echo "Successfully authenticated as admin"
+    
+    # Prüfe ob Realm existiert, sonst erstelle ihn
+    REALM_NAME="${KEYCLOAK_REALM}"
+    
+    REALM_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
+      "http://keycloak-instance-service:8080/admin/realms/${REALM_NAME}" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}")
+    
+    if [ "$REALM_EXISTS" != "200" ]; then
+      echo "Creating realm: ${REALM_NAME}"
+      curl -s -X POST "http://keycloak-instance-service:8080/admin/realms" \
+        -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"realm\": \"${REALM_NAME}\",
+          \"enabled\": true,
+          \"displayName\": \"${KEYCLOAK_REALM_DISPLAY_NAME}\"
+        }"
+      echo "Realm created successfully"
+    else
+      echo "Realm ${REALM_NAME} already exists"
+    fi
+    
+    # Prüfe ob User bereits existiert
+    USER_EXISTS=$(curl -s \
+      "http://keycloak-instance-service:8080/admin/realms/${REALM_NAME}/users?username=${KEYCLOAK_USER_USERNAME}" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r 'length')
+    
+    if [ "$USER_EXISTS" == "0" ]; then
+      echo "Creating user: ${KEYCLOAK_USER_FIRSTNAME} ${KEYCLOAK_USER_LASTNAME}"
+      
+      # User erstellen
+      USER_CREATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+        "http://keycloak-instance-service:8080/admin/realms/${REALM_NAME}/users" \
+        -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"username\": \"${KEYCLOAK_USER_USERNAME}\",
+          \"email\": \"${KEYCLOAK_USER_EMAIL}\",
+          \"firstName\": \"${KEYCLOAK_USER_FIRSTNAME}\",
+          \"lastName\": \"${KEYCLOAK_USER_LASTNAME}\",
+          \"enabled\": true,
+          \"emailVerified\": true
+        }")
+      
+      HTTP_CODE=$(echo "$USER_CREATE_RESPONSE" | tail -n 1)
+      
+      if [ "$HTTP_CODE" == "201" ]; then
+        echo "User created successfully"
+        
+        # User ID aus Location Header holen
+        USER_ID=$(curl -s -I -X POST \
+          "http://keycloak-instance-service:8080/admin/realms/${REALM_NAME}/users" \
+          -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"username\": \"${KEYCLOAK_USER_USERNAME}\"
+          }" 2>&1 | grep -i "location:" | sed 's/.*\///' | tr -d '\r')
+        
+        # Alternativ: User ID via API holen
+        if [ -z "$USER_ID" ]; then
+          USER_ID=$(curl -s \
+            "http://keycloak-instance-service:8080/admin/realms/${REALM_NAME}/users?username=${KEYCLOAK_USER_USERNAME}" \
+            -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r '.[0].id')
+        fi
+        
+        # Passwort setzen
+        if [ -n "$USER_ID" ] && [ "$USER_ID" != "null" ]; then
+          echo "Setting password for user..."
+          curl -s -X PUT \
+            "http://keycloak-instance-service:8080/admin/realms/${REALM_NAME}/users/${USER_ID}/reset-password" \
+            -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"type\": \"password\",
+              \"value\": \"${KEYCLOAK_USER_PASSWORD}\",
+              \"temporary\": false
+            }"
+          echo "Password set successfully"
+        fi
+      else
+        echo "Failed to create user. HTTP Code: $HTTP_CODE"
+      fi
+    else
+      echo "User ${KEYCLOAK_USER_USERNAME} already exists"
+    fi
+    
+    echo "Initialization completed successfully!"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-init-{{ .Release.Revision | default "1" }}
+  namespace: {{ .Values.namespace.name }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: keycloak-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: keycloak-init
+        image: {{ .Values.keycloak.init.image }}
+        command: ["/bin/sh", "/scripts/init.sh"]
+        env:
+        - name: KEYCLOAK_ADMIN
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-instance-initial-admin
+              key: username
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-instance-initial-admin
+              key: password
+        - name: KEYCLOAK_REALM
+          value: {{ .Values.keycloak.init.realm.name | quote }}
+        - name: KEYCLOAK_REALM_DISPLAY_NAME
+          value: {{ .Values.keycloak.init.realm.displayName | quote }}
+        - name: KEYCLOAK_USER_USERNAME
+          value: {{ .Values.keycloak.init.user.username | quote }}
+        - name: KEYCLOAK_USER_EMAIL
+          value: {{ .Values.keycloak.init.user.email | quote }}
+        - name: KEYCLOAK_USER_FIRSTNAME
+          value: {{ .Values.keycloak.init.user.firstName | quote }}
+        - name: KEYCLOAK_USER_LASTNAME
+          value: {{ .Values.keycloak.init.user.lastName | quote }}
+        - name: KEYCLOAK_USER_PASSWORD
+          value: {{ .Values.keycloak.init.user.password | quote }}
+        volumeMounts:
+        - name: init-script
+          mountPath: /scripts
+      volumes:
+      - name: init-script
+        configMap:
+          name: keycloak-init-script
+          defaultMode: 0755
+{{- end }}

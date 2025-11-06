@@ -7,6 +7,8 @@ spec:
   instances: {{ .Values.keycloak.replicas }}
   image: {{ .Values.keycloak.image.registry }}/{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}
   startOptimized: {{ .Values.keycloak.startOptimized }}
+  http:
+    httpEnabled: {{ .Values.keycloak.httpEnabled }}
   db:
     vendor: postgres
     host: keycloak-db-rw
