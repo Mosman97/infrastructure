@@ -13,10 +13,10 @@ spec:
     vendor: postgres
     host: keycloak-db-rw
     usernameSecret:
-      name: keycloak-db-secret
+      name: keycloak-db-app
       key: username
     passwordSecret:
-      name: keycloak-db-secret
+      name: keycloak-db-app
       key: password
   hostname:
     hostname: {{ .Values.keycloak.hostname }}

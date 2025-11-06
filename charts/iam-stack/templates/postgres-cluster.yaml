@@ -56,8 +56,6 @@ spec:
       encoding: UTF8
       localeCType: C
       localeCollate: C
-      secret:
-        name: keycloak-db-secret
   
   storage:
     size: {{ .Values.postgres.storage.size }}

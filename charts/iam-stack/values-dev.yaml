@@ -22,30 +22,26 @@ keycloak:
   operator:
     version: "26.4.2"
   
-  # Automatische Initialisierung beim Deployment
   init:
     enabled: true
     image: badouralix/curl-jq:latest
     
-    # Realm Konfiguration
     realm:
       name: myrealm
       displayName: "My Application Realm"
     
-    # Standard User der automatisch angelegt wird
     user:
       username: eric.hans
       email: eric.hans@example.com
       firstName: Eric
       lastName: Hans
-      password: password123  # Ändere das in Production!
+      password: password123  
 
 postgres:
   instances: 3
   image: ghcr.io/cloudnative-pg/postgresql:18
   database: keycloak
-  username: testuser
-  password: testpassword
+  username: keycloak 
   
   primaryUpdateStrategy: unsupervised  
   primaryUpdateMethod: switchover 
