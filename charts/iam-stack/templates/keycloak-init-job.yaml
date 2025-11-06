@@ -148,6 +148,7 @@ spec:
       labels:
         app: keycloak-init
     spec:
+      serviceAccountName: keycloak-init-sa
       restartPolicy: OnFailure
       containers:
       - name: keycloak-init
