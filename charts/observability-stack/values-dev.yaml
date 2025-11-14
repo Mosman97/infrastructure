@@ -1,58 +1,48 @@
 namespace:
   name: observability
 
-loki-stack:
+loki:
+  enabled: true
+  deploymentMode: SingleBinary
   loki:
-    enabled: true
-    image:
-      tag: "3.5.8"
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: 'filesystem'
+    schemaConfig:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+    storage_config:
+      filesystem:
+        directory: /var/loki/chunks
+      tsdb_shipper:
+        active_index_directory: /var/loki/tsdb-index
+        cache_location: /var/loki/tsdb-cache
+    limits_config:
+      retention_period: 8760h
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      ingestion_rate_mb: 20
+      ingestion_burst_size_mb: 30
+      max_query_length: 8760h
+    compactor:
+      working_directory: /var/loki/compactor
+      retention_enabled: true
+      retention_delete_delay: 2h
+      retention_delete_worker_count: 150
+  singleBinary:
+    replicas: 1
     persistence:
       enabled: true
-      storageClassName: hostpath
+      storageClass: hostpath
       size: 100Gi
-    config:
-      auth_enabled: false
-      server:
-        http_listen_port: 3100
-      ingester:
-        chunk_idle_period: 5m
-        chunk_retain_period: 30s
-        max_chunk_age: 1h
-        lifecycler:
-          ring:
-            kvstore:
-              store: inmemory
-            replication_factor: 1
-      schema_config:
-        configs:
-          - from: 2024-01-01
-            store: boltdb-shipper
-            object_store: filesystem
-            schema: v11
-            index:
-              prefix: index_
-              period: 24h
-      storage_config:
-        boltdb_shipper:
-          active_index_directory: /data/loki/boltdb-shipper-active
-          cache_location: /data/loki/boltdb-shipper-cache
-          cache_ttl: 24h
-        filesystem:
-          directory: /data/loki/chunks
-      limits_config:
-        retention_period: 8760h
-        reject_old_samples: true
-        reject_old_samples_max_age: 168h
-        ingestion_rate_mb: 20
-        ingestion_burst_size_mb: 30
-        max_query_length: 8760h
-      compactor:
-        working_directory: /data/loki/retention
-        retention_enabled: true
-        retention_delete_delay: 2h
-        retention_delete_worker_count: 150
-    serviceMonitor:
-      enabled: false
     resources:
       requests:
         memory: 512Mi
@@ -60,31 +50,21 @@ loki-stack:
       limits:
         memory: 1Gi
         cpu: 1
-    securityContext:
-      fsGroup: 10001
-      runAsGroup: 10001
-      runAsNonRoot: true
-      runAsUser: 10001
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: true
-      
-  promtail:
-    enabled: true
-    image:
-      tag: "3.5.8"
-    config:
-      server:
-        http_listen_port: 9080
-        grpc_listen_port: 0
-      positions:
-        filename: /tmp/positions.yaml
-      clients:
-        - url: http://loki:3100/loki/api/v1/push
-      scrape_configs:
+  test:
+    enabled: false
+
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
+    positions:
+      filename: /tmp/positions.yaml
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+    snippets:
+      scrapeConfigs: |
         - job_name: kubernetes-pods
           kubernetes_sd_configs:
             - role: pod
@@ -114,99 +94,57 @@ loki-stack:
                   timestamp: time
             - labels:
                 level:
-    resources:
-      requests:
-        memory: 128Mi
-        cpu: 100m
-      limits:
-        memory: 256Mi
-        cpu: 200m
-    securityContext:
-      runAsUser: 0
-      runAsGroup: 0
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: true
-      
-  grafana:
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+  daemonset:
     enabled: true
-    image:
-      tag: "12.2.1"
-    admin:
-      existingSecret: ""
-      userKey: admin-user
-      passwordKey: admin-password
-    adminUser: admin
-    adminPassword: admin123
-    persistence:
-      enabled: true
-      storageClassName: hostpath
-      size: 10Gi
-    datasources:
-      datasources.yaml:
-        apiVersion: 1
-        datasources:
-          - name: Loki
-            type: loki
-            access: proxy
-            url: http://loki:3100
-            isDefault: true
-            jsonData:
-              maxLines: 1000
-    dashboardProviders:
-      dashboardproviders.yaml:
-        apiVersion: 1
-        providers:
-          - name: default
-            orgId: 1
-            folder: ''
-            type: file
-            disableDeletion: false
-            editable: true
-            options:
-              path: /var/lib/grafana/dashboards/default
-    dashboards:
-      default:
-        loki-logs:
-          gnetId: 13639
-          revision: 2
-          datasource: Loki
-    ingress:
-      enabled: true
-      ingressClassName: nginx
-      hosts:
-        - grafana.local
-    resources:
-      requests:
-        memory: 256Mi
-        cpu: 250m
-      limits:
-        memory: 512Mi
-        cpu: 500m
-    securityContext:
-      runAsUser: 472
-      runAsGroup: 472
-      fsGroup: 472
-      runAsNonRoot: true
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: false
-    grafana.ini:
-      server:
-        root_url: http://grafana.local
-      security:
-        admin_user: admin
-        admin_password: admin123
-      users:
-        allow_sign_up: false
-      auth.anonymous:
-        enabled: false
-      log:
-        mode: console
-        level: info
+
+grafana:
+  enabled: true
+  adminUser: admin
+  adminPassword: admin123
+  persistence:
+    enabled: true
+    storageClassName: hostpath
+    size: 10Gi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://{{ .Release.Name }}-loki:3100
+          version: 1
+          isDefault: true
+          jsonData:
+            maxLines: 1000
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - grafana.local
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
