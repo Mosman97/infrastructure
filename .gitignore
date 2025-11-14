@@ -13,3 +13,5 @@
 
 # macOS
 .DS_Store
+Chart.lock
+charts/*/charts/*.tgz
