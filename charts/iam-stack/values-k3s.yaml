@@ -37,21 +37,6 @@ keycloak:
       value: info
     - name: spi-events-listener-jboss-logging-error-level
       value: warn
-  
-  init:
-    enabled: true
-    image: badouralix/curl-jq:latest
-    
-    realm:
-      name: myrealm
-      displayName: "My Application Realm"
-    
-    user:
-      username: eric.hans
-      email: eric.hans@example.com
-      firstName: Eric
-      lastName: Hans
-      password: password123 
 
 postgres:
   instances: 3

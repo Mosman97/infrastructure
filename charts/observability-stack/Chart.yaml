@@ -1,0 +1,10 @@
+apiVersion: v2
+name: observability-stack
+description: Loki Stack for centralized logging with 1-year retention
+type: application
+version: 1.0.0
+appVersion: "3.5.8"
+dependencies:
+  - name: loki-stack
+    version: 2.10.2
+    repository: https://grafana.github.io/helm-charts

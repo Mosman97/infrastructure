@@ -11,7 +11,7 @@ spec:
     path: charts/observability-stack
     helm:
       valueFiles:
-        - values-dev.yaml
+        - values-k3s.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: observability
