@@ -43,3 +43,9 @@ spec:
     - name: log-console-output
       value: {{ .Values.logging.format | quote }}
 {{- end }}
+{{- if .Values.keycloak.additionalOptions }}
+{{- range .Values.keycloak.additionalOptions }}
+    - name: {{ .name }}
+      value: {{ .value | quote }}
+{{- end }}
+{{- end }}
