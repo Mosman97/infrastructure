@@ -62,11 +62,17 @@ loki:
 
 promtail:
   enabled: true
+  extraVolumes:
+    - name: positions
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: positions
+      mountPath: /run/promtail
   config:
     clients:
-      - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
+      - url: http://loki-stack:3100/loki/api/v1/push
     positions:
-      filename: /tmp/positions.yaml
+      filename: /run/promtail/positions.yaml
     server:
       http_listen_port: 9080
       grpc_listen_port: 0
