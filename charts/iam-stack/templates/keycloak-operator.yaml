@@ -200,10 +200,22 @@ spec:
         app: keycloak-operator
     spec:
       serviceAccountName: keycloak-operator
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: keycloak-operator
         image: quay.io/keycloak/keycloak-operator:{{ .Values.keycloak.operator.version }}
         imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: false
         env:
         - name: KUBERNETES_NAMESPACE
           valueFrom:
