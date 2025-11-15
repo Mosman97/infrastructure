@@ -16,11 +16,11 @@ kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f - >/
 
 helm upgrade --install argocd argo/argo-cd \
   --namespace argocd \
-  --version 7.7.12 \
+  --version 9.1.3 \
   --set server.service.type=LoadBalancer \
   --set configs.params."server\.insecure"=true \
   --wait \
-  --timeout 5m
+  --timeout 10m
 
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo -e "${GREEN}✅ ArgoCD installed${NC}"
