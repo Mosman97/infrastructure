@@ -9,19 +9,25 @@ NC='\033[0m'
 echo -e "${RED}🧹 Cleaning up Kubernetes Infrastructure${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 1/4: Deleting ArgoCD Applications...${NC}"
+echo -e "${YELLOW}Step 1/5: Deleting ArgoCD Applications...${NC}"
 kubectl delete applications -n argocd --all --ignore-not-found=true 2>/dev/null || true
 sleep 5
 echo -e "${GREEN}✅ Applications deleted${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 2/4: Deleting namespaces...${NC}"
+echo -e "${YELLOW}Step 2/5: Uninstalling Helm releases...${NC}"
+helm uninstall argocd -n argocd 2>/dev/null || true
+sleep 5
+echo -e "${GREEN}✅ Helm releases uninstalled${NC}"
+echo ""
+
+echo -e "${YELLOW}Step 3/5: Deleting namespaces...${NC}"
 kubectl delete namespace argocd istio-system observability iam-system --force --grace-period=0 2>/dev/null || true
 sleep 10
 echo -e "${GREEN}✅ Namespaces deletion initiated${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 3/4: Force finalizing stuck namespaces...${NC}"
+echo -e "${YELLOW}Step 4/5: Force finalizing stuck namespaces...${NC}"
 for ns in argocd istio-system observability iam-system; do
   if kubectl get namespace $ns 2>/dev/null | grep -q Terminating; then
     echo "Finalizing $ns..."
@@ -32,7 +38,7 @@ sleep 5
 echo -e "${GREEN}✅ Namespaces finalized${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 4/4: Cleaning up PVCs and PVs...${NC}"
+echo -e "${YELLOW}Step 5/5: Cleaning up PVCs and PVs...${NC}"
 # Delete all PVCs that might be stuck
 kubectl get pvc --all-namespaces -o json | jq -r '.items[] | select(.metadata.namespace | test("argocd|istio-system|observability|iam-system")) | "\(.metadata.namespace) \(.metadata.name)"' | while read ns name; do
   echo "Deleting PVC $name in namespace $ns"

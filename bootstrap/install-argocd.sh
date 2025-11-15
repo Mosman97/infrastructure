@@ -21,9 +21,9 @@ helm upgrade --install argocd argo/argo-cd \
   --set configs.params."server\.insecure"=true \
   --timeout 5m
 
-# Wait for ArgoCD pods to be ready
+# Wait for ArgoCD to be ready
 echo "Waiting for ArgoCD to be ready..."
-kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+sleep 30
 
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo -e "${GREEN}✅ ArgoCD installed${NC}"

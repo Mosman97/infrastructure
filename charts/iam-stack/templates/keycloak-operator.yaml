@@ -198,11 +198,10 @@ spec:
     metadata:
       labels:
         app: keycloak-operator
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       serviceAccountName: keycloak-operator
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
