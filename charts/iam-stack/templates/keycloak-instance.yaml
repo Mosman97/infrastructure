@@ -7,6 +7,23 @@ spec:
   instances: {{ .Values.keycloak.replicas }}
   image: {{ .Values.keycloak.image.registry }}/{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}
   startOptimized: {{ .Values.keycloak.startOptimized }}
+  unsupported:
+    podTemplate:
+      spec:
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          fsGroup: 1000
+          seccompProfile:
+            type: RuntimeDefault
+        containers:
+          - name: keycloak
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: false
   resources:
     requests:
       memory: {{ .Values.keycloak.resources.requests.memory }}

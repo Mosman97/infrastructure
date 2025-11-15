@@ -11,7 +11,7 @@ loki:
   backend:
     replicas: 0
   loki:
-    auth_enabled: false
+    auth_enabled: true
     commonConfig:
       replication_factor: 1
     storage:
@@ -48,7 +48,7 @@ loki:
     replicas: 1
     persistence:
       enabled: true
-      storageClass: hostpath
+      storageClass: local-path
       size: 100Gi
     resources:
       requests:
@@ -148,7 +148,7 @@ grafana:
     enabled: false
   persistence:
     enabled: true
-    storageClassName: hostpath
+    storageClassName: local-path
     size: 10Gi
   datasources:
     datasources.yaml:
