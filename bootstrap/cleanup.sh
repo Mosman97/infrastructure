@@ -38,7 +38,7 @@ sleep 5
 echo -e "${GREEN}✅ Namespaces finalized${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 5/5: Cleaning up PVCs and PVs...${NC}"
+echo -e "${YELLOW}Step 5/7: Cleaning up PVCs and PVs...${NC}"
 # Delete all PVCs that might be stuck
 kubectl get pvc --all-namespaces -o json | jq -r '.items[] | select(.metadata.namespace | test("argocd|istio-system|observability|iam-system")) | "\(.metadata.namespace) \(.metadata.name)"' | while read ns name; do
   echo "Deleting PVC $name in namespace $ns"
@@ -53,6 +53,25 @@ done
 
 sleep 5
 echo -e "${GREEN}✅ PVCs and PVs cleaned${NC}"
+echo ""
+
+echo -e "${YELLOW}Step 6/7: Deleting Keycloak CRDs...${NC}"
+kubectl delete crd keycloaks.k8s.keycloak.org --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd keycloakrealmimports.k8s.keycloak.org --ignore-not-found=true 2>/dev/null || true
+echo -e "${GREEN}✅ Keycloak CRDs deleted${NC}"
+echo ""
+
+echo -e "${YELLOW}Step 7/7: Cleaning up CloudNativePG CRDs...${NC}"
+kubectl delete crd backups.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd clusterimagecatalogs.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd clusters.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd databases.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd imagecatalogs.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd poolers.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd publications.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd scheduledbackups.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+kubectl delete crd subscriptions.postgresql.cnpg.io --ignore-not-found=true 2>/dev/null || true
+echo -e "${GREEN}✅ CloudNativePG CRDs deleted${NC}"
 echo ""
 
 echo -e "${YELLOW}Waiting for cleanup to complete...${NC}"
