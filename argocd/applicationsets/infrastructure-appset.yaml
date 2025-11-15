@@ -30,7 +30,7 @@ spec:
             - values-dev.yaml
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ if eq .path.basename "cert-manager" }}cert-manager{{ else if eq .path.basename "istio-stack" }}istio-system{{ else if eq .path.basename "observability-stack" }}observability{{ else }}iam-system{{ end }}'
+        namespace: '{{ if eq .path.basename "istio-stack" }}istio-system{{ else if eq .path.basename "observability-stack" }}observability{{ else }}iam-system{{ end }}'
       syncPolicy:
         automated:
           prune: true

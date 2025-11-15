@@ -3,13 +3,6 @@ namespace:
 
 cloudnative-pg:
   replicaCount: 1
-  webhook:
-    certManager:
-      enabled: true
-      issuerRef:
-        name: ca-issuer
-        kind: ClusterIssuer
-        group: cert-manager.io
   resources:
     requests:
       memory: 128Mi
