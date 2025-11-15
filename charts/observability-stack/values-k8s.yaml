@@ -142,8 +142,13 @@ promtail:
 
 grafana:
   enabled: true
-  adminUser: admin
-  adminPassword: admin123
+  admin:
+    existingSecret: grafana-admin-credentials
+    userKey: admin-user
+    passwordKey: admin-password
+  # Disable init-chown-data to avoid permission issues with Istio sidecar
+  initChownData:
+    enabled: false
   persistence:
     enabled: true
     storageClassName: local-path

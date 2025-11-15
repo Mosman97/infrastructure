@@ -99,7 +99,6 @@ promtail:
               target_label: pod
             - source_labels: [__meta_kubernetes_pod_container_name]
               target_label: container
-            # Add Istio-specific labels
             - source_labels: [__meta_kubernetes_pod_label_service_istio_io_canonical_name]
               target_label: service
             - source_labels: [__meta_kubernetes_pod_label_version]
@@ -153,6 +152,9 @@ grafana:
     existingSecret: grafana-admin-credentials
     userKey: admin-user
     passwordKey: admin-password
+  # Disable init-chown-data to avoid permission issues with Istio sidecar
+  initChownData:
+    enabled: false
   persistence:
     enabled: true
     storageClassName: hostpath
