@@ -111,7 +111,6 @@ promtail:
               target_label: __path__
           pipeline_stages:
             - docker: {}
-            # Detect and parse JSON logs (e.g., from Istio Envoy)
             - match:
                 selector: '{container="istio-proxy"}'
                 stages:
@@ -128,7 +127,6 @@ promtail:
                       method:
                       response_code:
                       upstream_cluster:
-            # Default JSON parsing for other containers
             - json:
                 expressions:
                   level: level
@@ -152,7 +150,6 @@ grafana:
     existingSecret: grafana-admin-credentials
     userKey: admin-user
     passwordKey: admin-password
-  # Disable init-chown-data to avoid permission issues with Istio sidecar
   initChownData:
     enabled: false
   persistence:

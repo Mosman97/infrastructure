@@ -19,7 +19,6 @@ istiod:
         cpu: 1000m
         memory: 2Gi
   meshConfig:
-    # Send access logs to stdout in JSON format for Promtail collection
     accessLogFile: /dev/stdout
     accessLogEncoding: JSON
     accessLogFormat: |

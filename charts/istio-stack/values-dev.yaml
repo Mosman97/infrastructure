@@ -19,7 +19,6 @@ istiod:
         cpu: 500m
         memory: 1Gi
   meshConfig:
-    # Send access logs to stdout in JSON format for Promtail collection
     accessLogFile: /dev/stdout
     accessLogEncoding: JSON
     accessLogFormat: |
@@ -51,10 +50,8 @@ istiod:
         sampling: 100.0
       holdApplicationUntilProxyStarts: true
     enableAutoMtls: true
-    # Strict mTLS for all services
     outboundTrafficPolicy:
       mode: REGISTRY_ONLY
 
 gateway:
   enabled: false
-  # Wir nutzen den bestehenden nginx-ingress, kein Istio Ingress Gateway

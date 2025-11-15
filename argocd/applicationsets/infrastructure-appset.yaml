@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/Mosman97/infrastructure.git
+        revision: main
+        directories:
+          - path: charts/*
+  template:
+    metadata:
+      name: '{{.path.basename}}'
+      namespace: argocd
+      labels:
+        managed-by: applicationset
+        stack: '{{.path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Mosman97/infrastructure.git
+        targetRevision: main
+        path: '{{.path.path}}'
+        helm:
+          valueFiles:
+            - values-k8s.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ if eq .path.basename "istio-stack" }}istio-system{{ else if eq .path.basename "observability-stack" }}observability{{ else }}iam-system{{ end }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
