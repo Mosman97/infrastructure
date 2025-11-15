@@ -41,7 +41,7 @@ echo -e "${GREEN}✅ Applications created${NC}"
 echo ""
 
 echo -e "${YELLOW}Step 4/5: Syncing Istio Stack (wave 0)...${NC}"
-kubectl patch application istio-stack -n argocd --type merge -p '{"operation":{"sync":{"syncStrategy":{"hook":{}}}}}' 2>/dev/null || true
+kubectl patch application istio-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}' 
 sleep 10
 
 echo "Waiting for Istio to become healthy..."
@@ -58,16 +58,25 @@ while [ $elapsed -lt $timeout ]; do
     echo "Still waiting... ($elapsed/$timeout seconds)"
   fi
 done
+
+# Reset selfHeal to false after successful deployment
+kubectl patch application istio-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
 echo ""
 
 echo -e "${YELLOW}Step 5/5: Syncing remaining stacks...${NC}"
 echo "Syncing Observability Stack (wave 1)..."
-kubectl patch application observability-stack -n argocd --type merge -p '{"operation":{"sync":{"syncStrategy":{"hook":{}}}}}' 2>/dev/null || true
-sleep 60
+kubectl patch application observability-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+sleep 90
+
+# Reset selfHeal to false
+kubectl patch application observability-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
 
 echo "Syncing IAM Stack (wave 2)..."
-kubectl patch application iam-stack -n argocd --type merge -p '{"operation":{"sync":{"syncStrategy":{"hook":{}}}}}' 2>/dev/null || true
-sleep 60
+kubectl patch application iam-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+sleep 90
+
+# Reset selfHeal to false
+kubectl patch application iam-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
 
 echo -e "${GREEN}✅ Bootstrap complete!${NC}"
 echo ""
