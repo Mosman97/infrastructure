@@ -1,0 +1,49 @@
+{{- if .Values.namespace.istio.enabled }}
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: observability-mtls
+  namespace: {{ .Values.namespace.name }}
+spec:
+  mtls:
+    mode: {{ .Values.namespace.istio.mtls.mode }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: loki-authz
+  namespace: {{ .Values.namespace.name }}
+spec:
+  selector:
+    matchLabels:
+      app: loki
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - "cluster.local/ns/{{ .Values.namespace.name }}/sa/loki-stack-promtail"
+        - "cluster.local/ns/{{ .Values.namespace.name }}/sa/loki-stack-grafana"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: grafana-authz
+  namespace: {{ .Values.namespace.name }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces:
+        - "ingress-nginx"
+  - to:
+    - operation:
+        paths:
+        - "/api/health"
+        methods:
+        - "GET"
+{{- end }}

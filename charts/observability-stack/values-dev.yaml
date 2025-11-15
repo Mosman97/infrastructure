@@ -1,9 +1,16 @@
 namespace:
   name: observability
+  istio:
+    enabled: true
+    mtls:
+      mode: STRICT
 
 loki:
   enabled: true
   deploymentMode: SingleBinary
+  serviceAccount:
+    create: true
+    name: loki-stack
   read:
     replicas: 0
   write:
@@ -119,8 +126,10 @@ promtail:
 
 grafana:
   enabled: true
-  adminUser: admin
-  adminPassword: admin123
+  admin:
+    existingSecret: grafana-admin-credentials
+    userKey: admin-user
+    passwordKey: admin-password
   persistence:
     enabled: true
     storageClassName: hostpath
