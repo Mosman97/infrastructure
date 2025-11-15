@@ -1,0 +1,30 @@
+namespace:
+  name: istio-system
+
+base:
+  global:
+    istioNamespace: istio-system
+
+istiod:
+  global:
+    istioNamespace: istio-system
+  pilot:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  meshConfig:
+    accessLogFile: /dev/stdout
+    defaultConfig:
+      tracing:
+        sampling: 10.0
+      holdApplicationUntilProxyStarts: true
+    enableAutoMtls: true
+    outboundTrafficPolicy:
+      mode: REGISTRY_ONLY
+
+gateway:
+  enabled: false

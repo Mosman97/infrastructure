@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  description: Core infrastructure components (Istio, observability)
+  sourceRepos:
+    - 'https://github.com/Mosman97/infrastructure.git'
+  destinations:
+    - namespace: 'istio-system'
+      server: https://kubernetes.default.svc
+    - namespace: 'observability'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

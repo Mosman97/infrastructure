@@ -1,0 +1,32 @@
+namespace:
+  name: istio-system
+
+base:
+  global:
+    istioNamespace: istio-system
+
+istiod:
+  global:
+    istioNamespace: istio-system
+  pilot:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+  meshConfig:
+    accessLogFile: /dev/stdout
+    defaultConfig:
+      tracing:
+        sampling: 100.0
+      holdApplicationUntilProxyStarts: true
+    enableAutoMtls: true
+    # Strict mTLS for all services
+    outboundTrafficPolicy:
+      mode: REGISTRY_ONLY
+
+gateway:
+  enabled: false
+  # Wir nutzen den bestehenden nginx-ingress, kein Istio Ingress Gateway
