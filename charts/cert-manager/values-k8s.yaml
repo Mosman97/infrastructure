@@ -8,11 +8,6 @@ cert-manager:
   global:
     leaderElection:
       namespace: cert-manager
-    podSecurityPolicy:
-      enabled: false
-  
-  podSecurityContext:
-    runAsNonRoot: false
   
   resources:
     requests:
