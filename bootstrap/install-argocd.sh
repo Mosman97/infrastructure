@@ -31,19 +31,25 @@ echo "   Username: admin"
 echo "   Password: $ARGOCD_PASSWORD"
 echo ""
 
-echo -e "${YELLOW}Step 2/3: Deploying ApplicationSet...${NC}"
+echo -e "${YELLOW}Step 2/4: Creating default AppProject...${NC}"
+kubectl apply -f argocd/projects/default-project.yaml
+
+echo -e "${GREEN}✅ AppProject created${NC}"
+echo ""
+
+echo -e "${YELLOW}Step 3/4: Deploying ApplicationSet...${NC}"
 kubectl apply -f argocd/applicationsets/infrastructure-appset.yaml
 
 echo -e "${GREEN}✅ ApplicationSet deployed${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 3/5: Waiting for ApplicationSet to create Applications...${NC}"
+echo -e "${YELLOW}Step 4/6: Waiting for ApplicationSet to create Applications...${NC}"
 sleep 15
 
 echo -e "${GREEN}✅ Applications created${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 4/5: Syncing Istio Stack (wave 0)...${NC}"
+echo -e "${YELLOW}Step 5/6: Syncing Istio Stack (wave 0)...${NC}"
 kubectl patch application istio-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}' 
 sleep 10
 
@@ -66,7 +72,7 @@ done
 kubectl patch application istio-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
 echo ""
 
-echo -e "${YELLOW}Step 5/5: Syncing remaining stacks...${NC}"
+echo -e "${YELLOW}Step 6/6: Syncing remaining stacks...${NC}"
 echo "Syncing Observability Stack (wave 1)..."
 kubectl patch application observability-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
 sleep 90
