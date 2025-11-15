@@ -30,7 +30,7 @@ spec:
             - values-k8s.yaml
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ if eq .path.basename "istio-stack" }}istio-system{{ else if eq .path.basename "observability-stack" }}observability{{ else }}iam-system{{ end }}'
+        namespace: '{{ if eq .path.basename "istio-stack" }}istio-system{{ else if eq .path.basename "observability-stack" }}observability{{ else if eq .path.basename "cnpg-operator" }}cnpg-system{{ else }}iam-system{{ end }}'
       syncPolicy:
         automated:
           prune: true
