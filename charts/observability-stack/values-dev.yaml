@@ -69,12 +69,6 @@ loki:
 
 promtail:
   enabled: true
-  extraVolumes:
-    - name: positions
-      emptyDir: {}
-  extraVolumeMounts:
-    - name: positions
-      mountPath: /run/promtail
   config:
     clients:
       - url: http://loki-stack:3100/loki/api/v1/push

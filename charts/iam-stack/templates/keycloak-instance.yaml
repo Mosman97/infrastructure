@@ -3,6 +3,8 @@ kind: Keycloak
 metadata:
   name: keycloak-instance
   namespace: {{ .Values.namespace.name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   instances: {{ .Values.keycloak.replicas }}
   image: {{ .Values.keycloak.image.registry }}/{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}
