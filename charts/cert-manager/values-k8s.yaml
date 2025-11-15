@@ -9,6 +9,9 @@ cert-manager:
     leaderElection:
       namespace: cert-manager
   
+  securityContext:
+    runAsNonRoot: false
+  
   resources:
     requests:
       cpu: 50m
