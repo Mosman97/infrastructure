@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: {{ .Values.namespace.name }}
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "4"
   labels:
     name: {{ .Values.namespace.name }}
     istio-injection: enabled
