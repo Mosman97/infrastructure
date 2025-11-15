@@ -202,9 +202,6 @@ spec:
         sidecar.istio.io/inject: "false"
     spec:
       serviceAccountName: keycloak-operator
-        fsGroup: 1000
-        seccompProfile:
-          type: RuntimeDefault
       containers:
       - name: keycloak-operator
         image: quay.io/keycloak/keycloak-operator:{{ .Values.keycloak.operator.version }}
