@@ -3,7 +3,8 @@ kind: ClusterIssuer
 metadata:
   name: selfsigned-issuer
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   selfSigned: {}
 ---
@@ -13,7 +14,8 @@ metadata:
   name: selfsigned-ca
   namespace: {{ .Values.namespace.name }}
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   isCA: true
   commonName: selfsigned-ca
@@ -31,7 +33,8 @@ kind: ClusterIssuer
 metadata:
   name: ca-issuer
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   ca:
     secretName: selfsigned-ca-secret
