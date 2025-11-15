@@ -5,6 +5,7 @@ metadata:
   labels:
     name: {{ .Values.namespace.name }}
     istio-injection: enabled
-    pod-security.kubernetes.io/enforce: baseline
+    # Istio requires privileged mode for init containers (NET_ADMIN/NET_RAW)
+    pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted
