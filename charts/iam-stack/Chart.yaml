@@ -4,3 +4,7 @@ description: Keycloak IAM Stack with CloudNativePG
 type: application
 version: 1.0.0
 appVersion: "26.4.2"
+dependencies:
+  - name: cloudnative-pg
+    version: 0.23.0
+    repository: https://cloudnative-pg.github.io/charts

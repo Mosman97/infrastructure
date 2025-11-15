@@ -1,6 +1,16 @@
 namespace:
   name: iam-system
 
+cloudnative-pg:
+  replicaCount: 1
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
 logging:
   enabled: false
   format: text    
