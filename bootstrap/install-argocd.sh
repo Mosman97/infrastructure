@@ -17,10 +17,13 @@ kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f - >/
 helm upgrade --install argocd argo/argo-cd \
   --namespace argocd \
   --version 9.1.3 \
-  --set server.service.type=LoadBalancer \
+  --set server.service.type=ClusterIP \
   --set configs.params."server\.insecure"=true \
-  --wait \
-  --timeout 10m
+  --timeout 5m
+
+# Wait for ArgoCD pods to be ready
+echo "Waiting for ArgoCD to be ready..."
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
 
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo -e "${GREEN}✅ ArgoCD installed${NC}"
