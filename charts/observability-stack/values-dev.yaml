@@ -99,6 +99,11 @@ promtail:
               target_label: pod
             - source_labels: [__meta_kubernetes_pod_container_name]
               target_label: container
+            # Add Istio-specific labels
+            - source_labels: [__meta_kubernetes_pod_label_service_istio_io_canonical_name]
+              target_label: service
+            - source_labels: [__meta_kubernetes_pod_label_version]
+              target_label: version
             - replacement: /var/log/pods/*$1/*.log
               separator: /
               source_labels:
@@ -107,6 +112,24 @@ promtail:
               target_label: __path__
           pipeline_stages:
             - docker: {}
+            # Detect and parse JSON logs (e.g., from Istio Envoy)
+            - match:
+                selector: '{container="istio-proxy"}'
+                stages:
+                  - json:
+                      expressions:
+                        method: method
+                        path: path
+                        protocol: protocol
+                        response_code: response_code
+                        duration: duration
+                        upstream_cluster: upstream_cluster
+                        user_agent: user_agent
+                  - labels:
+                      method:
+                      response_code:
+                      upstream_cluster:
+            # Default JSON parsing for other containers
             - json:
                 expressions:
                   level: level
