@@ -52,16 +52,3 @@ istiod:
     enableAutoMtls: true
     outboundTrafficPolicy:
       mode: REGISTRY_ONLY
-
-gateway:
-  enabled: true
-  replicaCount: 1
-  service:
-    type: LoadBalancer
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi

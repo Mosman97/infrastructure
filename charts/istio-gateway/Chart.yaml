@@ -1,0 +1,11 @@
+apiVersion: v2
+name: istio-gateway
+description: Istio Ingress Gateway
+type: application
+version: 1.0.0
+appVersion: "1.28.0"
+
+dependencies:
+  - name: gateway
+    version: 1.28.0
+    repository: https://istio-release.storage.googleapis.com/charts
