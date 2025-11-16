@@ -13,11 +13,11 @@ istiod:
   pilot:
     resources:
       requests:
-        cpu: 100m
-        memory: 512Mi
+        cpu: 50m
+        memory: 256Mi
       limits:
         cpu: 500m
-        memory: 1Gi
+        memory: 512Mi
     env:
       ENABLE_CA_SERVER: true
   
