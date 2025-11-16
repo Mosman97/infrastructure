@@ -12,6 +12,13 @@ cloudnative-pg:
       cpu: 200m
   podAnnotations:
     sidecar.istio.io/inject: "false"
+  webhook:
+    mutating:
+      create: true
+    validating:
+      create: true
+  crds:
+    create: false
 
 logging:
   enabled: false
