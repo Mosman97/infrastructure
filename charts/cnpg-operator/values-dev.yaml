@@ -1,0 +1,31 @@
+namespace:
+  name: cnpg-system
+
+cloudnative-pg:
+  replicaCount: 1
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+  podAnnotations:
+    sidecar.istio.io/inject: "false"
+  
+  webhook:
+    port: 9443
+    mutating:
+      create: true
+      failurePolicy: Fail
+    validating:
+      create: true
+      failurePolicy: Fail
+  
+  crds:
+    create: true
+  
+  service:
+    type: ClusterIP
+    name: cnpg-webhook-service
+    port: 443
