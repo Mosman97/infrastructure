@@ -1,11 +1,13 @@
+{{- if .Values.namespace.istio.enabled }}
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
-  name: iam-mtls
+  name: observability-mtls
   namespace: {{ .Values.namespace.name }}
 spec:
   mtls:
-    mode: STRICT
+    mode: {{ .Values.namespace.istio.mtls.mode }}
   portLevelMtls:
-    8080:
+    80:
       mode: PERMISSIVE
+{{- end }}
