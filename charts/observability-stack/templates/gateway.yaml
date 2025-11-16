@@ -35,7 +35,7 @@ spec:
         prefix: /
     route:
     - destination:
-        host: loki-stack-grafana
+        host: observability-stack-grafana
         port:
           number: 80
 ---
@@ -47,7 +47,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  host: loki-stack-grafana
+  host: observability-stack-grafana
   trafficPolicy:
     tls:
       mode: DISABLE
