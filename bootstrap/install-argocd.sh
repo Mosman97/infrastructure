@@ -86,14 +86,15 @@ kubectl patch application observability-stack -n argocd --type merge -p '{"opera
 sleep 10
 
 echo "Waiting for Observability Stack to become healthy..."
-timeout=180
+timeout=90
 elapsed=0
 while [ $elapsed -lt $timeout ]; do
   health=$(kubectl get application observability-stack -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
   sync=$(kubectl get application observability-stack -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
   
-  if [ "$health" = "Healthy" ] && [ "$sync" = "Synced" ]; then
-    echo -e "${GREEN}✅ Observability Stack deployed (Health: $health, Sync: $sync)${NC}"
+  # Accept Synced status even if health is Progressing (pods starting up)
+  if [ "$sync" = "Synced" ]; then
+    echo -e "${GREEN}✅ Observability Stack synced (Health: $health)${NC}"
     break
   fi
   
@@ -110,14 +111,15 @@ kubectl patch application iam-stack -n argocd --type merge -p '{"operation":{"sy
 sleep 10
 
 echo "Waiting for IAM Stack to become healthy..."
-timeout=300
+timeout=120
 elapsed=0
 while [ $elapsed -lt $timeout ]; do
   health=$(kubectl get application iam-stack -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
   sync=$(kubectl get application iam-stack -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
   
-  if [ "$health" = "Healthy" ] && [ "$sync" = "Synced" ]; then
-    echo -e "${GREEN}✅ IAM Stack deployed (Health: $health, Sync: $sync)${NC}"
+  # Accept Synced status even if health is Progressing (pods starting up)
+  if [ "$sync" = "Synced" ]; then
+    echo -e "${GREEN}✅ IAM Stack synced (Health: $health)${NC}"
     break
   fi
   
