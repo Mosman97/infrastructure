@@ -18,10 +18,23 @@ istiod:
       limits:
         cpu: 500m
         memory: 1Gi
+    env:
+      ENABLE_CA_SERVER: true
+  
+  # Webhook configuration
   validationURL: ""
   validationCABundle: ""
   istiodRemote:
     injectionURL: ""
+  
+  sidecarInjectorWebhook:
+    enableNamespacesByDefault: false
+  
+  admissionWebhooks:
+    failurePolicy: Ignore
+    
+  validationWebhookConfiguration:
+    failurePolicy: Ignore
   meshConfig:
     accessLogFile: /dev/stdout
     accessLogEncoding: JSON
