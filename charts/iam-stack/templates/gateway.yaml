@@ -28,7 +28,7 @@ spec:
   hosts:
   - {{ .Values.gateway.hostname }}
   gateways:
-  - keycloak-gateway
+  - {{ .Values.namespace.name }}/keycloak-gateway
   http:
   - match:
     - uri:
