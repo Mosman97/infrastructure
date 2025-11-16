@@ -7,7 +7,4 @@ metadata:
 spec:
   mtls:
     mode: {{ .Values.namespace.istio.mtls.mode }}
-  portLevelMtls:
-    80:
-      mode: PERMISSIVE
 {{- end }}
