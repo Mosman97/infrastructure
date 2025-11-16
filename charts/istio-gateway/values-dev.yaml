@@ -3,6 +3,10 @@ gateway:
   labels:
     app: istio-ingressgateway
     istio: ingressgateway
+  # Override image: auto with explicit istio proxy image
+  image:
+    repository: docker.io/istio/proxyv2
+    tag: 1.28.0
   service:
     type: LoadBalancer
     ports:
