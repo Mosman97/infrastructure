@@ -37,7 +37,6 @@ spec:
           selfHeal: false
         syncOptions:
           - CreateNamespace=true
-          - ServerSideApply=true
           - RespectIgnoreDifferences=true
         retry:
           limit: 5
@@ -45,8 +44,4 @@ spec:
             duration: 5s
             factor: 2
             maxDuration: 3m
-      ignoreDifferences:
-        - group: "*"
-          kind: "*"
-          jsonPointers:
-            - /metadata/managedFields
+
