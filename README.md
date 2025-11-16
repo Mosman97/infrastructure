@@ -61,14 +61,25 @@ echo "Password: $(kubectl get secret keycloak-instance-initial-admin -n iam-syst
 
 ## 🏗️ Deployment mit ArgoCD
 
-### IAM Stack
+### Bootstrap Installation
 ```bash
-kubectl apply -f argocd/projects/iam-project.yaml
-kubectl apply -f argocd/applications/iam-application.yaml
+# ArgoCD und Keycloak CRDs installieren
+./bootstrap/install-argocd.sh
+
+# ApplicationSet deployen (managed alle Stacks)
+kubectl apply -f argocd/applicationsets/infrastructure-appset.yaml
 ```
 
-### Observability Stack
+### Sync-Verhalten
+**ignoreDifferences**: ArgoCD ignoriert `managedFields` Metadaten, die von ServerSideApply automatisch hinzugefügt werden. Dies verhindert false-positive Diffs ohne funktionale Auswirkungen.
+
+### Manuelle App-Verwaltung (alternativ)
 ```bash
+# IAM Stack
+kubectl apply -f argocd/projects/iam-project.yaml
+kubectl apply -f argocd/applications/iam-application.yaml
+
+# Observability Stack
 kubectl apply -f argocd/projects/observability-project.yaml
 kubectl apply -f argocd/applications/observability-application.yaml
 ```
