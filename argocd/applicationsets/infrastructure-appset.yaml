@@ -45,3 +45,13 @@ spec:
             duration: 5s
             factor: 2
             maxDuration: 3m
+      ignoreDifferences:
+        - group: "*"
+          kind: "*"
+          jsonPointers:
+            - /metadata/managedFields
+            - /metadata/generation
+        - group: "*"
+          kind: "*"
+          managedFieldsManagers:
+            - argocd-controller
