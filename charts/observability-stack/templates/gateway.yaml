@@ -50,5 +50,5 @@ spec:
   host: observability-stack-grafana
   trafficPolicy:
     tls:
-      mode: DISABLE
+      mode: ISTIO_MUTUAL
 {{- end }}
