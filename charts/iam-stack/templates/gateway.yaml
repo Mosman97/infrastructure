@@ -38,4 +38,17 @@ spec:
         host: keycloak-instance-service
         port:
           number: 8080
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: keycloak-dr
+  namespace: {{ .Values.namespace.name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  host: keycloak-instance-service
+  trafficPolicy:
+    tls:
+      mode: DISABLE
 {{- end }}
