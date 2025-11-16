@@ -100,6 +100,6 @@ postgres:
     log_min_duration_statement: "100"
 
 ingress:
-  enabled: true
+  enabled: false
   className: nginx
   hostname: keycloak.local

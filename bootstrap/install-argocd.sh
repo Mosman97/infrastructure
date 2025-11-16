@@ -31,98 +31,102 @@ echo "   Username: admin"
 echo "   Password: $ARGOCD_PASSWORD"
 echo ""
 
-echo -e "${YELLOW}Step 2/4: Creating default AppProject...${NC}"
-kubectl apply -f argocd/projects/default-project.yaml
-
-echo -e "${GREEN}✅ AppProject created${NC}"
-echo ""
-
-echo -e "${YELLOW}Step 3/7: Installing Keycloak CRDs...${NC}"
+echo -e "${YELLOW}Step 2/6: Installing Keycloak CRDs...${NC}"
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.4.2/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.4.2/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
 echo -e "${GREEN}✅ Keycloak CRDs installed${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 4/7: Deploying ApplicationSet...${NC}"
+echo -e "${YELLOW}Step 3/6: Deploying ApplicationSet...${NC}"
 kubectl apply -f argocd/applicationsets/infrastructure-appset.yaml
 
 echo -e "${GREEN}✅ ApplicationSet deployed${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 5/7: Waiting for ApplicationSet to create Applications...${NC}"
+echo -e "${YELLOW}Step 4/6: Waiting for ApplicationSet to create Applications...${NC}"
 sleep 15
 
 echo -e "${GREEN}✅ Applications created${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 6/7: Syncing Istio Stack (wave 0)...${NC}"
-kubectl patch application istio-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}' 
+echo -e "${YELLOW}Step 5/6: Syncing Istio Stack (wave 0)...${NC}"
+# Trigger initial sync by adding operation field
+kubectl patch application istio-stack -n argocd --type merge -p '{"operation":{"sync":{"revision":"main","prune":true}}}' 2>/dev/null || true
 sleep 10
 
 echo "Waiting for Istio to become healthy..."
 timeout=300
 elapsed=0
 while [ $elapsed -lt $timeout ]; do
-  if kubectl get pods -n istio-system -l app=istiod 2>/dev/null | grep -q "1/1.*Running"; then
-    echo -e "${GREEN}✅ Istio Stack deployed${NC}"
+  health=$(kubectl get application istio-stack -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+  sync=$(kubectl get application istio-stack -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+  
+  if [ "$health" = "Healthy" ] && [ "$sync" = "Synced" ]; then
+    echo -e "${GREEN}✅ Istio Stack deployed (Health: $health, Sync: $sync)${NC}"
     break
   fi
+  
+  # Check if pods are running as fallback
+  if kubectl get pods -n istio-system -l app=istiod 2>/dev/null | grep -q "1/1.*Running"; then
+    echo -e "${GREEN}✅ Istio Stack deployed (pods running)${NC}"
+    break
+  fi
+  
   sleep 10
   elapsed=$((elapsed + 10))
   if [ $((elapsed % 30)) -eq 0 ]; then
-    echo "Still waiting... ($elapsed/$timeout seconds)"
+    echo "Still waiting... ($elapsed/$timeout seconds, Health: $health, Sync: $sync)"
   fi
 done
-
-# Reset selfHeal to false after successful deployment
-kubectl patch application istio-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
 echo ""
 
-echo -e "${YELLOW}Step 7/7: Syncing remaining stacks...${NC}"
+echo -e "${YELLOW}Step 6/6: Syncing remaining stacks...${NC}"
 echo "Syncing Observability Stack (wave 1)..."
-kubectl patch application observability-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+kubectl patch application observability-stack -n argocd --type merge -p '{"operation":{"sync":{"revision":"main","prune":true}}}' 2>/dev/null || true
+sleep 10
 
 echo "Waiting for Observability Stack to become healthy..."
 timeout=180
 elapsed=0
 while [ $elapsed -lt $timeout ]; do
-  status=$(kubectl get application observability-stack -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
-  if [ "$status" = "Healthy" ]; then
-    echo -e "${GREEN}✅ Observability Stack deployed${NC}"
+  health=$(kubectl get application observability-stack -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+  sync=$(kubectl get application observability-stack -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+  
+  if [ "$health" = "Healthy" ] && [ "$sync" = "Synced" ]; then
+    echo -e "${GREEN}✅ Observability Stack deployed (Health: $health, Sync: $sync)${NC}"
     break
   fi
+  
   sleep 10
   elapsed=$((elapsed + 10))
   if [ $((elapsed % 30)) -eq 0 ]; then
-    echo "Still waiting... ($elapsed/$timeout seconds, status: $status)"
+    echo "Still waiting... ($elapsed/$timeout seconds, Health: $health, Sync: $sync)"
   fi
 done
-
-# Reset selfHeal to false
-kubectl patch application observability-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
 echo ""
 
 echo "Syncing IAM Stack (wave 2)..."
-kubectl patch application iam-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+kubectl patch application iam-stack -n argocd --type merge -p '{"operation":{"sync":{"revision":"main","prune":true}}}' 2>/dev/null || true
+sleep 10
 
 echo "Waiting for IAM Stack to become healthy..."
 timeout=300
 elapsed=0
 while [ $elapsed -lt $timeout ]; do
-  status=$(kubectl get application iam-stack -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
-  if [ "$status" = "Healthy" ]; then
-    echo -e "${GREEN}✅ IAM Stack deployed${NC}"
+  health=$(kubectl get application iam-stack -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+  sync=$(kubectl get application iam-stack -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+  
+  if [ "$health" = "Healthy" ] && [ "$sync" = "Synced" ]; then
+    echo -e "${GREEN}✅ IAM Stack deployed (Health: $health, Sync: $sync)${NC}"
     break
   fi
+  
   sleep 10
   elapsed=$((elapsed + 10))
   if [ $((elapsed % 30)) -eq 0 ]; then
-    echo "Still waiting... ($elapsed/$timeout seconds, status: $status)"
+    echo "Still waiting... ($elapsed/$timeout seconds, Health: $health, Sync: $sync)"
   fi
 done
-
-# Reset selfHeal to false
-kubectl patch application iam-stack -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
 
 echo -e "${GREEN}✅ Bootstrap complete!${NC}"
 echo ""
