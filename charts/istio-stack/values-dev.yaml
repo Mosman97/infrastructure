@@ -55,6 +55,7 @@ istiod:
 
 gateway:
   enabled: true
+  replicaCount: 1
   service:
     type: LoadBalancer
   resources:
