@@ -20,7 +20,7 @@ spec:
         managed-by: applicationset
         stack: '{{.path.basename}}'
     spec:
-      project: default
+      project: '{{ if or (eq .path.basename "istio-stack") (eq .path.basename "istio-gateway") }}infrastructure{{ else if eq .path.basename "observability-stack" }}observability{{ else }}iam{{ end }}'
       source:
         repoURL: https://github.com/Mosman97/infrastructure.git
         targetRevision: main
@@ -30,7 +30,7 @@ spec:
             - values-dev.yaml
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ if eq .path.basename "istio-stack" }}istio-system{{ else if eq .path.basename "observability-stack" }}observability{{ else }}iam-system{{ end }}'
+        namespace: '{{ if or (eq .path.basename "istio-stack") (eq .path.basename "istio-gateway") }}istio-system{{ else if eq .path.basename "observability-stack" }}observability{{ else }}iam-system{{ end }}'
       syncPolicy:
         automated:
           prune: true
