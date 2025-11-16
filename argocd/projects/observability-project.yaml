@@ -6,7 +6,7 @@ metadata:
 spec:
   description: Logging and Monitoring Infrastructure
   sourceRepos:
-    - '*'
+    - https://github.com/Mosman97/infrastructure.git
   destinations:
     - namespace: observability
       server: https://kubernetes.default.svc

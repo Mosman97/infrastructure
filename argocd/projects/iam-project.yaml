@@ -5,9 +5,9 @@ metadata:
   namespace: argocd
 spec:
   sourceRepos:
-    - '*'   # fürs erste unkritisch, später auf dein Repo einschränken
+    - https://github.com/Mosman97/infrastructure.git
   destinations:
-    - namespace: '*'
+    - namespace: iam-system
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: '*'

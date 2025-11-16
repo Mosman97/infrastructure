@@ -4,13 +4,11 @@ metadata:
   name: infrastructure
   namespace: argocd
 spec:
-  description: Core infrastructure components (Istio, observability)
+  description: Core infrastructure components (Istio)
   sourceRepos:
-    - 'https://github.com/Mosman97/infrastructure.git'
+    - https://github.com/Mosman97/infrastructure.git
   destinations:
-    - namespace: 'istio-system'
-      server: https://kubernetes.default.svc
-    - namespace: 'observability'
+    - namespace: istio-system
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: '*'
