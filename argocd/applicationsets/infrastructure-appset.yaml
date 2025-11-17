@@ -46,3 +46,16 @@ spec:
             factor: 2
             maxDuration: 3m
 
+      # Ignore dynamic webhook fields mutated by Istio at runtime
+      ignoreDifferences:
+        - group: admissionregistration.k8s.io
+          kind: ValidatingWebhookConfiguration
+          name: istio-validator-istio-system
+          jqPathExpressions:
+            - .webhooks[] | select(.name=="rev.validation.istio.io") | .failurePolicy
+        - group: admissionregistration.k8s.io
+          kind: ValidatingWebhookConfiguration
+          name: istiod-default-validator
+          jqPathExpressions:
+            - .webhooks[] | select(.name=="validation.istio.io") | .failurePolicy
+
