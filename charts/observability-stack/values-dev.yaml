@@ -57,6 +57,16 @@ loki:
       enabled: false
       size: 0
       storageClass: "-"
+    extraVolumes:
+      - name: tmp
+        emptyDir: {}
+      - name: loki-data
+        emptyDir: {}
+    extraVolumeMounts:
+      - name: tmp
+        mountPath: /tmp
+      - name: loki-data
+        mountPath: /var/loki
     resources:
       requests:
         memory: 512Mi
