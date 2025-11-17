@@ -173,10 +173,7 @@ grafana:
           options:
             path: /var/lib/grafana/dashboards/default
   ingress:
-    enabled: true
-    ingressClassName: nginx
-    hosts:
-      - grafana.local
+    enabled: false
   resources:
     requests:
       memory: 256Mi

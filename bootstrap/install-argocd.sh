@@ -29,29 +29,41 @@ echo -e "${GREEN}✅ CRDs installed${NC}\n"
 echo -e "${YELLOW}[3/6] Installing CNPG CRDs...${NC}"
 helm repo add cnpg https://cloudnative-pg.github.io/charts >/dev/null 2>&1 || true
 helm repo update >/dev/null 2>&1
-# Pipe CRDs directly from the chart to kubectl to avoid path issues
-helm show crds cnpg/cloudnative-pg --version 0.26.1 | kubectl apply -f - >/dev/null
+TMP_DIR=$(mktemp -d)
+helm pull cnpg/cloudnative-pg --version 0.26.1 --untar --untardir "$TMP_DIR" >/dev/null
+helm template cnpg "$TMP_DIR/cloudnative-pg" --namespace cnpg-system --include-crds --set crds.create=true 2>/dev/null | kubectl apply -f - >/dev/null 2>&1 || true
+rm -rf "$TMP_DIR"
 echo -e "${GREEN}✅ CNPG CRDs installed${NC}\n"
 
-echo -e "${YELLOW}[4/6] Creating ArgoCD Projects...${NC}"
+echo -e "${YELLOW}[4/7] Creating ArgoCD Projects...${NC}"
 kubectl apply -f argocd/projects/ >/dev/null
 echo -e "${GREEN}✅ Projects created${NC}\n"
 
-echo -e "${YELLOW}[5/6] Deploying ArgoCD Gateway...${NC}"
+echo -e "${YELLOW}[5/7] Deploying ApplicationSet...${NC}"
+kubectl apply -f argocd/applicationsets/infrastructure-appset.yaml >/dev/null
+echo -e "${GREEN}✅ ApplicationSet deployed${NC}\n"
+
+echo -e "${YELLOW}[6/7] Triggering initial sync...${NC}"
+kubectl patch application istio-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
+kubectl patch application istio-gateway -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
+kubectl patch application cnpg-operator -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
+echo -e "${GREEN}✅ Istio syncing${NC}\n"
+
+echo -e "${YELLOW}[7/7] Waiting for Istio CRDs and deploying ArgoCD Gateway...${NC}"
+# Wait for Istio Gateway CRD to exist (up to 2 minutes)
+for i in {1..24}; do
+  if kubectl get crd gateways.networking.istio.io >/dev/null 2>&1; then
+    break
+  fi
+  sleep 5
+done
 kubectl apply -f argocd/gateway.yaml >/dev/null
 echo -e "${GREEN}✅ Gateway deployed${NC}\n"
 
-echo -e "${YELLOW}[6/6] Deploying ApplicationSet...${NC}"
-kubectl apply -f argocd/applicationsets/infrastructure-appset.yaml >/dev/null
-sleep 10
-echo -e "${GREEN}✅ ApplicationSet deployed${NC}\n"
-
-echo -e "${YELLOW}➡️  Triggering initial sync...${NC}"
-kubectl patch application istio-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
+echo -e "${YELLOW}➡️  Syncing remaining apps...${NC}"
 kubectl patch application observability-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
 kubectl patch application iam-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
-kubectl patch application cnpg-operator -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
-echo -e "${GREEN}✅ Sync triggered${NC}\n"
+echo -e "${GREEN}✅ All apps syncing${NC}\n"
 
 echo -e "${GREEN}✅ Bootstrap complete!${NC}\n"
 echo "Monitor: kubectl get applications -n argocd"
