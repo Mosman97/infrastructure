@@ -58,13 +58,9 @@ loki:
       size: 0
       storageClass: "-"
     extraVolumes:
-      - name: loki-tmp
-        emptyDir: {}
       - name: loki-data
         emptyDir: {}
     extraVolumeMounts:
-      - name: loki-tmp
-        mountPath: /tmp
       - name: loki-data
         mountPath: /var/loki
     resources:
