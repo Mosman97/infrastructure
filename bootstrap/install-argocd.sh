@@ -58,13 +58,38 @@ for i in {1..24}; do
 done
 # Wait for istiod to be ready (injection webhook must be available)
 kubectl wait --for=condition=available --timeout=180s deployment/istiod -n istio-system >/dev/null 2>&1 || true
-sleep 10
+# Wait for sidecar injector webhook to be ready by testing injection
+echo "Waiting for Istio sidecar injection to be ready..."
+for i in {1..12}; do
+  # Test if injection works by checking webhook endpoints
+  if kubectl get mutatingwebhookconfiguration istio-sidecar-injector -o jsonpath='{.webhooks[0].clientConfig.service.name}' 2>/dev/null | grep -q "istiod"; then
+    sleep 5
+    break
+  fi
+  sleep 5
+done
 echo -e "${GREEN}✅ Istio ready${NC}\n"
 
 echo -e "${YELLOW}[8/8] Deploying istio-gateway and ArgoCD Gateway...${NC}"
 # Sync istio-gateway application and wait for it to be healthy
 kubectl patch application istio-gateway -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
-sleep 30
+echo "Waiting for gateway pod to be injected (up to 2 minutes)..."
+# Wait for gateway pod to exist and have injection
+for i in {1..24}; do
+  POD_IMAGE=$(kubectl -n istio-ingress get pods -l istio=ingressgateway -o jsonpath='{.items[0].spec.containers[0].image}' 2>/dev/null || echo "")
+  if [[ "$POD_IMAGE" != "auto" ]] && [[ -n "$POD_IMAGE" ]]; then
+    echo "Gateway pod injected successfully with image: $POD_IMAGE"
+    break
+  fi
+  sleep 5
+done
+# If still using 'auto', restart the pod
+POD_IMAGE=$(kubectl -n istio-ingress get pods -l istio=ingressgateway -o jsonpath='{.items[0].spec.containers[0].image}' 2>/dev/null || echo "")
+if [[ "$POD_IMAGE" == "auto" ]]; then
+  echo "Gateway pod still using 'auto' image, restarting pod..."
+  kubectl -n istio-ingress delete pods -l istio=ingressgateway >/dev/null 2>&1 || true
+  sleep 20
+fi
 # Deploy ArgoCD Gateway resources
 kubectl apply -f argocd/gateway.yaml >/dev/null
 echo -e "${GREEN}✅ Gateways deployed${NC}\n"
