@@ -10,7 +10,7 @@ loki:
   deploymentMode: SingleBinary
   serviceAccount:
     create: true
-    name: loki-stack
+    name: observability-stack-loki
   read:
     replicas: 0
   write:
@@ -77,7 +77,7 @@ promtail:
   enabled: true
   config:
     clients:
-      - url: http://loki-stack:3100/loki/api/v1/push
+      - url: http://observability-stack-loki:3100/loki/api/v1/push
     server:
       http_listen_port: 9080
       grpc_listen_port: 0
