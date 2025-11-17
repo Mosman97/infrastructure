@@ -55,6 +55,8 @@ loki:
     replicas: 1
     persistence:
       enabled: false
+      size: 0
+      storageClass: "-"
     resources:
       requests:
         memory: 512Mi
