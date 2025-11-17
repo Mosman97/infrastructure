@@ -12,13 +12,16 @@ cloudnative-pg:
       cpu: 500m
 
 logging:
-  enabled: false
-  format: text    
+  enabled: true
+  format: json    
   keycloak:
-    level: INFO
+    level: WARN
   postgres:
-    statement: none         
-    minDuration: -1           
+    statement: ddl
+    minDuration: 1000
+
+auditLogs:
+  enabled: true           
 
 keycloak:
   replicas: 2

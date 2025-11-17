@@ -5,13 +5,16 @@ cloudnative-pg:
   enabled: false
 
 logging:
-  enabled: false
-  format: text    
+  enabled: true
+  format: json
   keycloak:
     level: INFO
   postgres:
     statement: none         
-    minDuration: -1           
+    minDuration: -1
+
+auditLogs:
+  enabled: true           
 
 keycloak:
   replicas: 1
