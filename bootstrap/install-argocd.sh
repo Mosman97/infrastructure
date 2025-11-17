@@ -29,10 +29,8 @@ echo -e "${GREEN}✅ CRDs installed${NC}\n"
 echo -e "${YELLOW}[3/6] Installing CNPG CRDs...${NC}"
 helm repo add cnpg https://cloudnative-pg.github.io/charts >/dev/null 2>&1 || true
 helm repo update >/dev/null 2>&1
-TMP_DIR=$(mktemp -d)
-helm pull cnpg/cloudnative-pg --version 0.26.1 --untar --untardir "$TMP_DIR" >/dev/null
-kubectl apply -f "$TMP_DIR/cloudnative-pg/crds" >/dev/null
-rm -rf "$TMP_DIR"
+# Pipe CRDs directly from the chart to kubectl to avoid path issues
+helm show crds cnpg/cloudnative-pg --version 0.26.1 | kubectl apply -f - >/dev/null
 echo -e "${GREEN}✅ CNPG CRDs installed${NC}\n"
 
 echo -e "${YELLOW}[4/6] Creating ArgoCD Projects...${NC}"
