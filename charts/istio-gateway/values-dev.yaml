@@ -16,10 +16,10 @@ gateway:
         protocol: TCP
   resources:
     requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      cpu: 500m
+      cpu: 200m
       memory: 256Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
   autoscaling:
     enabled: false
