@@ -29,10 +29,10 @@ echo -e "${GREEN}✅ CRDs installed${NC}\n"
 echo -e "${YELLOW}[3/6] Installing CNPG CRDs...${NC}"
 helm repo add cnpg https://cloudnative-pg.github.io/charts >/dev/null 2>&1 || true
 helm repo update >/dev/null 2>&1
-TMP_DIR=$(mktemp -d)
-helm pull cnpg/cloudnative-pg --version 0.26.1 --untar --untardir "$TMP_DIR" >/dev/null
-helm template cnpg "$TMP_DIR/cloudnative-pg" --namespace cnpg-system --include-crds --set crds.create=true 2>/dev/null | kubectl apply -f - >/dev/null 2>&1 || true
-rm -rf "$TMP_DIR"
+# Apply CRDs with server-side apply to handle large annotations
+for crd in backups clusterimagecatalogs clusters databases failoverquorums imagecatalogs poolers publications scheduledbackups subscriptions; do
+  kubectl apply --server-side -f "https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.27/config/crd/bases/postgresql.cnpg.io_${crd}.yaml" >/dev/null 2>&1 || true
+done
 echo -e "${GREEN}✅ CNPG CRDs installed${NC}\n"
 
 echo -e "${YELLOW}[4/7] Creating ArgoCD Projects...${NC}"

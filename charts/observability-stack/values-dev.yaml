@@ -54,9 +54,7 @@ loki:
   singleBinary:
     replicas: 1
     persistence:
-      enabled: true
-      storageClass: hostpath
-      size: 100Gi
+      enabled: false
     resources:
       requests:
         memory: 512Mi
@@ -145,9 +143,7 @@ grafana:
   initChownData:
     enabled: false
   persistence:
-    enabled: true
-    storageClassName: hostpath
-    size: 10Gi
+    enabled: false
   datasources:
     datasources.yaml:
       apiVersion: 1
