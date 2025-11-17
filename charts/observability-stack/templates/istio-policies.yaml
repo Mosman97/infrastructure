@@ -39,7 +39,7 @@ spec:
   - from:
     - source:
         namespaces:
-        - "ingress-nginx"
+        - "istio-ingress"
   - to:
     - operation:
         paths:
