@@ -1,152 +1,72 @@
 # Infrastructure Stack
 
-GitOps-managed Kubernetes infrastructure with ArgoCD, Istio Service Mesh, Keycloak IAM, and Observability.
+GitOps-managed Kubernetes infrastructure with ArgoCD, Istio, Keycloak, and Observability.
 
-## 🏗️ Architecture
+## Stack
 
-- **Service Mesh**: Istio 1.24+ with STRICT mTLS
-- **IAM**: Keycloak 26.4.2 with PostgreSQL 18 (CNPG)
-- **Observability**: Loki + Grafana + Promtail
 - **GitOps**: ArgoCD with ApplicationSets
-- **Ingress**: Istio Gateway (auto-injected)
+- **Service Mesh**: Istio with STRICT mTLS
+- **IAM**: Keycloak 26.4.2 + PostgreSQL 18 (CloudNativePG)
+- **Observability**: Loki + Grafana + Promtail
+- **Security**: NetworkPolicies + Istio mTLS
 
-## 🚀 Schnellstart
+## Quick Start
 
-### Voraussetzungen
-- **Minikube**: 16GB RAM, 4 CPUs empfohlen
-- **kubectl**: Latest version
-- **helm**: v3+
+### Requirements
+- Minikube (16GB RAM, 4 CPUs) or K3s cluster
+- kubectl, helm v3+
 
-### Bootstrap (Full Stack Deployment)
+### Deploy
+
 ```bash
-# Minikube starten
+# Minikube
 minikube start --memory=16384 --cpus=4
-
-# Bootstrap ausführen (installiert alles)
 ./bootstrap/install-argocd.sh
+minikube tunnel  # separate terminal
 
-# Minikube tunnel für LoadBalancer (neues Terminal)
-minikube tunnel
-
-# Status prüfen
-kubectl get applications -n argocd
+# Add to /etc/hosts
+echo "127.0.0.1 argocd.local keycloak.local grafana.local" | sudo tee -a /etc/hosts
 ```
 
-**Das Bootstrap-Script installiert:**
-1. ArgoCD + Initial Admin Secret
-2. Keycloak & CNPG CRDs
-3. ArgoCD Projects (iam, infrastructure, observability)
-4. ApplicationSet (deployed alle Charts automatisch)
-5. Istio Stack (Service Mesh mit mTLS)
-6. Istio Gateway (mit Injection-Wait-Logic)
-7. CNPG Operator (PostgreSQL Management)
-8. Observability Stack (Loki, Grafana, Promtail)
-9. IAM Stack (Keycloak + PostgreSQL Cluster)
+### Access
 
-## 🔐 Zugriff auf Services
-
-### ArgoCD UI
-**URL**: http://argocd.local
-
+**ArgoCD**: http://argocd.local
 ```bash
-# Admin Password abrufen
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-### Keycloak Admin Console
-**URL**: http://keycloak.local
-
+**Keycloak**: http://keycloak.local
 ```bash
-# Admin Credentials abrufen
-echo "Username: $(kubectl get secret keycloak-instance-initial-admin -n iam-system -o jsonpath='{.data.username}' | base64 -d)"
-echo "Password: $(kubectl get secret keycloak-instance-initial-admin -n iam-system -o jsonpath='{.data.password}' | base64 -d)"
+kubectl get secret keycloak-instance-initial-admin -n iam-system -o jsonpath='{.data.password}' | base64 -d
 ```
 
-### Grafana Dashboards
-**URL**: http://grafana.local
-
-**Default Login**: admin / (aus Secret)
+**Grafana**: http://grafana.local
 ```bash
 kubectl -n observability get secret grafana-admin-credentials -o jsonpath='{.data.admin-password}' | base64 -d
 ```
 
-⚠️ **Wichtig**: `/etc/hosts` Einträge erforderlich:
-```bash
-echo "127.0.0.1 argocd.local keycloak.local grafana.local" | sudo tee -a /etc/hosts
+## Structure
+
 ```
-
-## 📦 Komponenten
-
-### Istio Stack (Service Mesh)
-- **Istio Base**: CRDs and core components
-- **Istiod**: Control plane (Gateway injection, mTLS CA)
-- **Istio Gateway**: Ingress gateway with automatic sidecar injection
-- **mTLS**: STRICT mode for all service-to-service communication
-
-### IAM Stack
-- **PostgreSQL 18**: 3-Node-Cluster mit CloudNativePG
-  - STRICT mTLS mit Port 8000 PERMISSIVE (für CNPG Operator Status)
-- **Keycloak 26.4.2**: 1 Replica (dev), 2 Replicas (prod)
-- **Keycloak Operator 26.4.2**: CRD Management
-- **CNPG Operator**: PostgreSQL Cluster Management (ohne Istio Sidecar)
-
-### Observability Stack
-- **Loki 3.5.7**: SingleBinary mode, Filesystem storage
-- **Promtail**: Log collector (DaemonSet)
-- **Grafana 12.2.1**: Dashboards & Queries
-- **Loki Canary**: Health monitoring
-
-## 🔄 GitOps Workflow
-
-### ApplicationSet Pattern
-Alle Stacks werden über ein **ApplicationSet** verwaltet:
-```yaml
 charts/
-├── istio-stack/
-├── istio-gateway/
-├── cnpg-operator/
-├── iam-stack/
-└── observability-stack/
+├── istio-stack/          # Service mesh
+├── istio-gateway/        # Ingress gateway
+├── cnpg-operator/        # PostgreSQL operator
+├── iam-stack/            # Keycloak + PostgreSQL
+└── observability-stack/  # Loki + Grafana
 ```
 
-**Auto-Discovery**: ApplicationSet generiert automatisch eine Application pro Chart-Verzeichnis.
+## Monitoring
 
-### Deployment-Reihenfolge (Bootstrap)
-1. **Wave 1**: Istio Stack deployment
-2. **Wait**: Istiod ready + Sidecar Injection verfügbar
-3. **Wave 2**: Istio Gateway deployment (mit Injection-Check)
-4. **Wave 3**: CNPG Operator
-5. **Wave 4**: Parallel deployment von IAM & Observability Stacks
-
-### Sync Policy
-- **Automated Sync**: Enabled mit Prune
-- **Self-Heal**: Disabled (manuelle Kontrolle)
-- **Retry Logic**: 5 attempts mit exponential backoff (5s → 3m)
-
-### Health Checks & Workarounds
-**PostgreSQL Cluster**: 
-- Status Extraction Error aufgrund Istio mTLS + CNPG Operator
-- Lösung: Port 8000 auf PERMISSIVE, Operator ohne Sidecar
-- Cluster ist functional trotz "Progressing" Status
-
-## 📊 Observability & Monitoring
-
-### Logging Pipeline
-**Promtail** (DaemonSet) → **Loki** (SingleBinary) → **Grafana** (Dashboard)
-
-### Log Queries (LogQL)
-
-**Keycloak Events**:
+**Keycloak Logs**:
 ```logql
-{namespace="iam-system", pod=~"keycloak-.*"} |= "type" | json
+{namespace="iam-system", pod=~"keycloak-.*"}
 ```
 
 **PostgreSQL Logs**:
 ```logql
-{namespace="iam-system", pod=~"keycloak-db-.*"} |= "LOG:"
+{namespace="iam-system", pod=~"keycloak-db-.*"}
 ```
-
-**Istio Access Logs**:
 ```logql
 {namespace="istio-ingress"} |= "GET" | json | method="GET"
 ```

@@ -1,164 +1,72 @@
-# Infrastructure Architecture
+# Architecture
 
-## High-Level Overview
+## Overview
 
-```mermaid
-graph TB
-    Client[Client Browser]
-    
-    subgraph Kubernetes Cluster
-        subgraph istio-ingress Namespace
-            Gateway[Istio Gateway<br/>LoadBalancer]
-        end
-        
-        subgraph istio-system Namespace
-            Istiod[Istiod Control Plane<br/>mTLS CA + Injection]
-        end
-        
-        subgraph iam-system Namespace
-            KC[Keycloak<br/>:8080]
-            PGPRI[(PostgreSQL Primary<br/>:5432/:8000)]
-            PGREP1[(PostgreSQL Replica 1<br/>:5432/:8000)]
-            PGREP2[(PostgreSQL Replica 2<br/>:5432/:8000)]
-        end
-        
-        subgraph observability-system Namespace
-            Loki[Loki SingleBinary<br/>:3100]
-            Grafana[Grafana<br/>:3000]
-            Promtail[Promtail DaemonSet]
-        end
-        
-        CNPGOp[CNPG Operator<br/>No Sidecar]
-    end
-    
-    Client -->|HTTPS| Gateway
-    Gateway -->|mTLS STRICT| KC
-    Gateway -->|mTLS STRICT| Grafana
-    KC -->|mTLS STRICT| PGPRI
-    KC -->|mTLS STRICT| PGREP1
-    KC -->|mTLS STRICT| PGREP2
-    
-    CNPGOp -->|Plain HTTP :8000<br/>PERMISSIVE| PGPRI
-    CNPGOp -->|Plain HTTP :8000<br/>PERMISSIVE| PGREP1
-    CNPGOp -->|Plain HTTP :8000<br/>PERMISSIVE| PGREP2
-    
-    Promtail -.->|scrapes| KC
-    Promtail -.->|scrapes| PGPRI
-    Grafana -->|queries| Loki
-    Promtail -->|pushes| Loki
-    
-    Istiod -.->|injects sidecar| KC
-    Istiod -.->|injects sidecar| PGPRI
-    Istiod -.->|injects sidecar| Gateway
-    Istiod -.->|issues certs| Gateway
-
-    style Gateway fill:#FF6B6B,stroke:#fff,color:#fff
-    style Istiod fill:#FF6B6B,stroke:#fff,color:#fff
-    style KC fill:#326CE5,stroke:#fff,color:#fff
-    style PGPRI fill:#336791,stroke:#fff,color:#fff
-    style PGREP1 fill:#336791,stroke:#fff,color:#fff
-    style PGREP2 fill:#336791,stroke:#fff,color:#fff
-    style Loki fill:#4ECDC4,stroke:#fff,color:#fff
-    style Grafana fill:#4ECDC4,stroke:#fff,color:#fff
-    style CNPGOp fill:#FFD700,stroke:#333,color:#333
+```
+Client → Istio Gateway (mTLS) → Services
+                               ├─ Keycloak → PostgreSQL
+                               ├─ Grafana → Loki
+                               └─ ArgoCD
 ```
 
-## Component Overview
+## Components
 
-### Istio Service Mesh
-- **Istio Base**: CRDs and foundational resources
-- **Istiod**: Control plane managing certificate authority, sidecar injection, and configuration
-- **Istio Gateway**: LoadBalancer ingress with automatic sidecar injection
-- **mTLS Mode**: STRICT for all namespaces (service-to-service encryption)
-- **Special Case**: Port 8000 PERMISSIVE for CNPG Operator → PostgreSQL communication
+### Service Mesh (Istio)
+- **Gateway**: LoadBalancer ingress
+- **Istiod**: Control plane, mTLS CA, sidecar injection
+- **mTLS**: STRICT mode (all traffic encrypted)
 
-### ArgoCD GitOps Platform
-- **Deployment**: ApplicationSet pattern with auto-discovery
-- **Sync Policy**: Automated with prune, 5 retry attempts
-- **Projects**: infrastructure, iam, observability
-- **Access**: http://argocd.local (admin password in argocd-initial-admin-secret)
+### IAM (iam-system namespace)
+- **Keycloak**: Identity provider (1 replica dev, 2 prod)
+- **PostgreSQL**: 3-node cluster (CloudNativePG)
+- **CNPG Operator**: Database management (no sidecar)
 
-### IAM Stack Components
+### Observability (observability namespace)
+- **Loki**: Log aggregation (SingleBinary)
+- **Grafana**: Dashboards and queries
+- **Promtail**: DaemonSet log collector
 
-#### Keycloak (Identity Provider)
-- **Replicas**: 1 (dev), 2 (prod)
-- **Resources**: 512Mi-2Gi RAM, 500m-1 CPU
-- **Port**: 8080 (HTTP inside mesh, mTLS enforced by Istio sidecar)
-- **Access**: http://keycloak.local (via Istio Gateway)
-- **Managed by**: Keycloak Operator
-- **Admin Secret**: `keycloak-instance-initial-admin`
+### GitOps
+- **ArgoCD**: ApplicationSet auto-discovers charts
+- **Sync**: Automated with prune, 5 retries
 
-#### PostgreSQL Cluster (CloudNativePG)
-- **Instances**: 3 (1 Primary + 2 Replicas)
-- **Version**: PostgreSQL 18.1
-- **Resources**: 512Mi-1Gi RAM, 500m-1 CPU per instance
-- **Storage**: 10Gi per instance (persistent)
-- **Ports**: 
-  - 5432: SQL access (STRICT mTLS)
-  - 8000: CNPG status endpoint (PERMISSIVE mTLS)
-- **Managed by**: CNPG Operator (v1.27)
-- **App Secret**: `keycloak-db-app`
+## Security
 
-#### CNPG Operator
-- **Sidecar Injection**: Disabled (`sidecar.istio.io/inject: "false"`)
-- **Communication**: Plain HTTP to PostgreSQL port 8000
-- **mTLS Strategy**: Port-level PERMISSIVE policy allows both plain HTTP and mTLS
+### mTLS
+- STRICT mode for all services
+- Port 8000 PERMISSIVE for CNPG operator status
 
-### Observability Stack Components
+### NetworkPolicies
+- Default deny all
+- Whitelist only required connections
+- DNS and Istio control plane allowed
 
-#### Loki (Log Aggregation)
-- **Mode**: SingleBinary (dev), Distributed (prod)
-- **Version**: 3.5.7
-- **Storage**: emptyDir at /var/loki (dev), PVC (prod)
-- **Resources**: 128Mi-512Mi RAM, 100m-500m CPU
-- **Port**: 3100
-
-#### Grafana (Visualization)
-- **Version**: 12.2.1
-- **Access**: http://grafana.local (via Istio Gateway)
-- **Admin Secret**: `grafana-admin` in observability-system
-- **Data Sources**: Pre-configured Loki connection
-- **Persistence**: Disabled (dev)
-
-#### Promtail (Log Collection)
-- **Type**: DaemonSet (runs on all nodes)
-- **Version**: 3.5.1
-- **Targets**: All pods in iam-system and observability-system
-- **Labels**: Automatic namespace, pod, container enrichment
-
-### Security Policies
-
-#### PeerAuthentication (mTLS)
-1. **iam-mtls**: STRICT mode for entire iam-system namespace
-2. **postgres-status-permissive**: PERMISSIVE on port 8000 for PostgreSQL pods
-   - Selector: `cnpg.io/cluster: keycloak-db`
-   - Allows CNPG Operator to communicate plain HTTP for status checks
-
-#### Secrets (Auto-Generated)
-- **keycloak-instance-initial-admin**: Keycloak admin credentials (Keycloak Operator)
-- **keycloak-db-app**: PostgreSQL credentials (CNPG Operator)
-- **grafana-admin**: Grafana admin password
-- **argocd-initial-admin-secret**: ArgoCD admin password
-
-## Data Flow
-
-### Authentication Request Flow
-1. **Client Request**: Browser → Istio Gateway (LoadBalancer)
-2. **TLS Termination**: Gateway → mTLS encryption to backend
-3. **Service Routing**: Gateway → Keycloak pod (via VirtualService)
-4. **Database Query**: Keycloak → PostgreSQL primary/replica (mTLS on port 5432)
-5. **Response**: PostgreSQL → Keycloak → Gateway → Client
+### Secrets
+- Auto-generated by operators
+- Stored in Kubernetes secrets
+- Production: Use external secrets management
 
 ### Operator Management Flow
 1. **Status Check**: CNPG Operator → PostgreSQL pods port 8000 (plain HTTP, PERMISSIVE mTLS)
 2. **Health Validation**: Operator reads cluster status, instance readiness
 3. **Reconciliation**: Operator updates CR status based on health checks
 
-### Logging Pipeline
-1. **Log Collection**: Promtail DaemonSet scrapes container logs
-2. **Label Enrichment**: Namespace, pod, container labels added automatically
-3. **Ingestion**: Promtail → Loki (push model)
-4. **Visualization**: Grafana → Loki (LogQL queries)
+## Data Flow
+
+### User Authentication
+```
+Browser → Gateway → Keycloak → PostgreSQL
+```
+
+### Logging
+```
+Apps → Promtail → Loki → Grafana
+```
+
+### GitOps
+```
+Git Push → ArgoCD → Kubernetes
+```
 
 ### GitOps Deployment Flow
 1. **Git Commit**: Developer pushes to infrastructure repository
