@@ -6,3 +6,18 @@ metadata:
 spec:
   mtls:
     mode: STRICT
+---
+# Allow CNPG operator status endpoint on port 8000 without mTLS
+# The operator needs plain HTTP access to this health check endpoint
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: postgres-status-permissive
+  namespace: {{ .Values.namespace.name }}
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: keycloak-db
+  portLevelMtls:
+    8000:
+      mode: PERMISSIVE
