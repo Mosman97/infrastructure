@@ -69,7 +69,7 @@ postgres:
   
   storage:
     size: 10Gi
-    storageClass: hostpath
+    storageClass: standard
   resources:
     requests:
       memory: "512Mi"
