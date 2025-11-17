@@ -11,7 +11,7 @@ cloudnative-pg:
       memory: 256Mi
       cpu: 200m
   podAnnotations:
-    sidecar.istio.io/inject: "false"
+    sidecar.istio.io/inject: "true"
   
   webhook:
     port: 9443
