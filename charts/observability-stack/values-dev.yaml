@@ -53,6 +53,8 @@ loki:
       delete_request_store: filesystem
   singleBinary:
     replicas: 1
+    podAnnotations:
+      sidecar.istio.io/inject: "false"
     persistence:
       enabled: false
       size: 0
@@ -65,11 +67,11 @@ loki:
         mountPath: /var/loki
     resources:
       requests:
+        memory: 256Mi
+        cpu: 200m
+      limits:
         memory: 512Mi
         cpu: 500m
-      limits:
-        memory: 1Gi
-        cpu: 1
   test:
     enabled: false
 
