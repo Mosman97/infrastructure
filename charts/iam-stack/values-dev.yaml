@@ -14,7 +14,7 @@ logging:
     minDuration: -1           
 
 keycloak:
-  replicas: 2
+  replicas: 1
   image:
     registry: quay.io
     repository: keycloak/keycloak
