@@ -21,17 +21,21 @@ sleep 30
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo -e "${GREEN}✅ ArgoCD ready (admin:$ARGOCD_PASSWORD)${NC}\n"
 
-echo -e "${YELLOW}[2/4] Installing Keycloak CRDs...${NC}"
+echo -e "${YELLOW}[2/5] Installing Keycloak CRDs...${NC}"
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.4.2/kubernetes/keycloaks.k8s.keycloak.org-v1.yml >/dev/null
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.4.2/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml >/dev/null
 echo -e "${GREEN}✅ CRDs installed${NC}\n"
 
-echo -e "${YELLOW}[3/4] Deploying ApplicationSet...${NC}"
+echo -e "${YELLOW}[3/5] Creating ArgoCD Projects...${NC}"
+kubectl apply -f argocd/projects/ >/dev/null
+echo -e "${GREEN}✅ Projects created${NC}\n"
+
+echo -e "${YELLOW}[4/5] Deploying ApplicationSet...${NC}"
 kubectl apply -f argocd/applicationsets/infrastructure-appset.yaml >/dev/null
 sleep 10
 echo -e "${GREEN}✅ ApplicationSet deployed${NC}\n"
 
-echo -e "${YELLOW}[4/4] Triggering initial sync...${NC}"
+echo -e "${YELLOW}[5/5] Triggering initial sync...${NC}"
 kubectl patch application istio-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
 kubectl patch application observability-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
 kubectl patch application iam-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
