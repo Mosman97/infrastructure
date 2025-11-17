@@ -3,6 +3,7 @@ gateway:
   labels:
     app: istio-ingressgateway
     istio: ingressgateway
+  image: docker.io/istio/proxyv2:1.24.2
   service:
     type: LoadBalancer
     ports:
