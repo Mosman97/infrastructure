@@ -50,5 +50,5 @@ spec:
   host: keycloak-instance-service
   trafficPolicy:
     tls:
-      mode: DISABLE
+      mode: ISTIO_MUTUAL
 {{- end }}
