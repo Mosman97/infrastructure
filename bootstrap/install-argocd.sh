@@ -21,28 +21,38 @@ sleep 30
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo -e "${GREEN}✅ ArgoCD ready (admin:$ARGOCD_PASSWORD)${NC}\n"
 
-echo -e "${YELLOW}[2/5] Installing Keycloak CRDs...${NC}"
+echo -e "${YELLOW}[2/6] Installing Keycloak CRDs...${NC}"
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.4.2/kubernetes/keycloaks.k8s.keycloak.org-v1.yml >/dev/null
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.4.2/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml >/dev/null
 echo -e "${GREEN}✅ CRDs installed${NC}\n"
 
-echo -e "${YELLOW}[3/5] Creating ArgoCD Projects...${NC}"
+echo -e "${YELLOW}[3/6] Installing CNPG CRDs...${NC}"
+helm repo add cnpg https://cloudnative-pg.github.io/charts >/dev/null 2>&1 || true
+helm repo update >/dev/null 2>&1
+TMP_DIR=$(mktemp -d)
+helm pull cnpg/cloudnative-pg --version 0.26.1 --untar --untardir "$TMP_DIR" >/dev/null
+kubectl apply -f "$TMP_DIR/cloudnative-pg/crds" >/dev/null
+rm -rf "$TMP_DIR"
+echo -e "${GREEN}✅ CNPG CRDs installed${NC}\n"
+
+echo -e "${YELLOW}[4/6] Creating ArgoCD Projects...${NC}"
 kubectl apply -f argocd/projects/ >/dev/null
 echo -e "${GREEN}✅ Projects created${NC}\n"
 
-echo -e "${YELLOW}[4/6] Deploying ArgoCD Gateway...${NC}"
+echo -e "${YELLOW}[5/6] Deploying ArgoCD Gateway...${NC}"
 kubectl apply -f argocd/gateway.yaml >/dev/null
 echo -e "${GREEN}✅ Gateway deployed${NC}\n"
 
-echo -e "${YELLOW}[5/6] Deploying ApplicationSet...${NC}"
+echo -e "${YELLOW}[6/6] Deploying ApplicationSet...${NC}"
 kubectl apply -f argocd/applicationsets/infrastructure-appset.yaml >/dev/null
 sleep 10
 echo -e "${GREEN}✅ ApplicationSet deployed${NC}\n"
 
-echo -e "${YELLOW}[6/6] Triggering initial sync...${NC}"
+echo -e "${YELLOW}➡️  Triggering initial sync...${NC}"
 kubectl patch application istio-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
 kubectl patch application observability-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
 kubectl patch application iam-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
+kubectl patch application cnpg-operator -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
 echo -e "${GREEN}✅ Sync triggered${NC}\n"
 
 echo -e "${GREEN}✅ Bootstrap complete!${NC}\n"

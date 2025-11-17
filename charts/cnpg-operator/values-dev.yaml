@@ -23,7 +23,7 @@ cloudnative-pg:
       failurePolicy: Fail
   
   crds:
-    create: true
+    create: false
   
   service:
     type: ClusterIP
