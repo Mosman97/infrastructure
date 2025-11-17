@@ -48,7 +48,7 @@ spec:
     - namespaceSelector:
         matchLabels:
           name: kube-system
-    podSelector:
+      podSelector:
         matchLabels:
           k8s-app: kube-dns
     ports:
@@ -109,7 +109,7 @@ spec:
     - namespaceSelector:
         matchLabels:
           name: kube-system
-    podSelector:
+      podSelector:
         matchLabels:
           k8s-app: kube-dns
     ports:
