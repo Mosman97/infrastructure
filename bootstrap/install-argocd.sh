@@ -30,12 +30,16 @@ echo -e "${YELLOW}[3/5] Creating ArgoCD Projects...${NC}"
 kubectl apply -f argocd/projects/ >/dev/null
 echo -e "${GREEN}✅ Projects created${NC}\n"
 
-echo -e "${YELLOW}[4/5] Deploying ApplicationSet...${NC}"
+echo -e "${YELLOW}[4/6] Deploying ArgoCD Gateway...${NC}"
+kubectl apply -f argocd/gateway.yaml >/dev/null
+echo -e "${GREEN}✅ Gateway deployed${NC}\n"
+
+echo -e "${YELLOW}[5/6] Deploying ApplicationSet...${NC}"
 kubectl apply -f argocd/applicationsets/infrastructure-appset.yaml >/dev/null
 sleep 10
 echo -e "${GREEN}✅ ApplicationSet deployed${NC}\n"
 
-echo -e "${YELLOW}[5/5] Triggering initial sync...${NC}"
+echo -e "${YELLOW}[6/6] Triggering initial sync...${NC}"
 kubectl patch application istio-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
 kubectl patch application observability-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
 kubectl patch application iam-stack -n argocd --type merge -p '{"operation":{"sync":{"prune":true}}}' 2>/dev/null || true
