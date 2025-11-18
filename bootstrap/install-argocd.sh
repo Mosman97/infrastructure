@@ -91,7 +91,7 @@ if [[ "$POD_IMAGE" == "auto" ]]; then
   sleep 20
 fi
 # Deploy ArgoCD Gateway resources
-kubectl apply -f argocd/gateway.yaml >/dev/null
+kubectl apply -f argocd/resources/gateway.yaml >/dev/null
 echo -e "${GREEN}✅ Gateways deployed${NC}\n"
 
 echo -e "${YELLOW}[9/9] Syncing remaining apps...${NC}"
