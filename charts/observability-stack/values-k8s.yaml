@@ -46,17 +46,19 @@ loki:
       delete_request_store: filesystem
   singleBinary:
     replicas: 1
+    podAnnotations:
+      sidecar.istio.io/inject: "true"
     persistence:
       enabled: true
-      storageClass: local-path
+      storageClass: standard
       size: 100Gi
     resources:
       requests:
-        memory: 512Mi
-        cpu: 500m
-      limits:
         memory: 1Gi
         cpu: 1
+      limits:
+        memory: 2Gi
+        cpu: 2
   test:
     enabled: false
 
@@ -64,7 +66,8 @@ promtail:
   enabled: true
   config:
     clients:
-      - url: http://loki-stack:3100/loki/api/1/push
+      - url: http://observability-stack-loki:3100/loki/api/v1/push
+        tenant_id: observability
     server:
       http_listen_port: 9080
       grpc_listen_port: 0
@@ -122,11 +125,11 @@ promtail:
                 level:
   resources:
     requests:
-      memory: 128Mi
-      cpu: 100m
-    limits:
       memory: 256Mi
       cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
   daemonset:
     enabled: true
 
@@ -140,7 +143,7 @@ grafana:
     enabled: false
   persistence:
     enabled: true
-    storageClassName: local-path
+    storageClassName: standard
     size: 10Gi
   datasources:
     datasources.yaml:
@@ -154,6 +157,9 @@ grafana:
           isDefault: true
           jsonData:
             maxLines: 1000
+            httpHeaderName1: 'X-Scope-OrgID'
+          secureJsonData:
+            httpHeaderValue1: 'observability'
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -167,14 +173,12 @@ grafana:
           options:
             path: /var/lib/grafana/dashboards/default
   ingress:
-    enabled: true
-    ingressClassName: traefik
-    hosts:
-      - grafana.k3s.local
+    enabled: false
+  replicas: 2
   resources:
     requests:
-      memory: 256Mi
-      cpu: 250m
-    limits:
       memory: 512Mi
       cpu: 500m
+    limits:
+      memory: 1Gi
+      cpu: 1

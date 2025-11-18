@@ -1,172 +1,404 @@
-# Infrastructure Stack
+# Kubernetes Infrastructure mit GitOps
 
-GitOps-managed Kubernetes infrastructure with ArgoCD, Istio, Keycloak, and Observability.
+GitOps-basierte Kubernetes-Infrastruktur mit ArgoCD, Istio Service Mesh, Keycloak IAM und Observability Stack.
 
-## Stack
+## 🎯 Was ist das?
 
-- **GitOps**: ArgoCD with ApplicationSets
-- **Service Mesh**: Istio with STRICT mTLS
-- **IAM**: Keycloak 26.4.2 + PostgreSQL 18 (CloudNativePG)
-- **Observability**: Loki + Grafana + Promtail
-- **Security**: NetworkPolicies + Istio mTLS
+Produktionsreife Kubernetes-Infrastruktur die automatisch deployt:
+- **ArgoCD** - GitOps Controller (alles aus Git)
+- **Istio** - Service Mesh mit automatischer mTLS-Verschlüsselung
+- **Keycloak** - Identity & Access Management (SSO, OAuth2, OIDC)
+- **PostgreSQL** - Hochverfügbare Datenbank (CNPG Operator, 3 Instances)
+- **Loki + Grafana** - Logging und Monitoring
 
-## Quick Start
+**Umgebungen:**
+- `values-dev.yaml` - Minikube (1 Replica, 16GB RAM, weniger Resources)
+- `values-k8s.yaml` - Production (HA, mehr Resources, TLS, LoadBalancer)
 
-### Requirements
-- Minikube (16GB RAM, 4 CPUs) or K3s cluster
-- kubectl, helm v3+
+---
 
-### Deploy
+## 🚀 Quick Start
+
+### Voraussetzungen
 
 ```bash
 # Minikube
-minikube start --memory=16384 --cpus=4
-./bootstrap/install-argocd.sh
-minikube tunnel  # separate terminal
-
-# Add to /etc/hosts
-echo "127.0.0.1 argocd.local keycloak.local grafana.local" | sudo tee -a /etc/hosts
-```
-
-### Access
-
-**ArgoCD**: http://argocd.local
-```bash
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-```
-
-**Keycloak**: http://keycloak.local
-```bash
-kubectl get secret keycloak-instance-initial-admin -n iam-system -o jsonpath='{.data.password}' | base64 -d
-```
-
-**Grafana**: http://grafana.local
-```bash
-kubectl -n observability get secret grafana-admin-credentials -o jsonpath='{.data.admin-password}' | base64 -d
-```
-
-## Structure
-
-```
-charts/
-├── istio-stack/          # Service mesh
-├── istio-gateway/        # Ingress gateway
-├── cnpg-operator/        # PostgreSQL operator
-├── iam-stack/            # Keycloak + PostgreSQL
-└── observability-stack/  # Loki + Grafana
-```
-
-## Monitoring
-
-**Keycloak Logs**:
-```logql
-{namespace="iam-system", pod=~"keycloak-.*"}
-```
-
-**PostgreSQL Logs**:
-```logql
-{namespace="iam-system", pod=~"keycloak-db-.*"}
-```
-```logql
-{namespace="istio-ingress"} |= "GET" | json | method="GET"
-```
-
-**All IAM System Logs**:
-```logql
-{namespace="iam-system"} | json
-```
-
-### Metrics & Tracing
-- **Istio Prometheus**: Automatic service mesh metrics collection
-- **Grafana Dashboards**: Pre-configured for Istio + Loki
-- **Distributed Tracing**: Enabled via Istio (Jaeger-compatible headers)
-
-**User Login Events**:
-```logql
-{namespace="iam-system", pod=~"keycloak-.*"} | json | type="LOGIN"
-```
-
-### Data Retention
-- **Dev**: No persistence (emptyDir storage)
-- **Prod**: 90 days retention policy (configurable)
-
-## 🗂️ Repository Structure
-
-```
-infrastructure/
-├── argocd/
-│   ├── applicationsets/
-│   │   └── infrastructure-appset.yaml   # Auto-discovery for all charts
-│   └── projects/
-│       ├── default-project.yaml
-│       ├── iam-project.yaml
-│       ├── infrastructure-project.yaml
-│       └── observability-project.yaml
-├── bootstrap/
-│   ├── install-argocd.sh                # Full-stack bootstrap
-│   └── cleanup.sh
-├── charts/
-│   ├── istio-stack/                     # Istio Service Mesh
-│   ├── istio-gateway/                   # Ingress Gateway
-│   ├── cnpg-operator/                   # PostgreSQL Operator
-│   ├── iam-stack/                       # Keycloak + PostgreSQL
-│   └── observability-stack/             # Loki + Grafana + Promtail
-├── ARCHITECTURE.md                      # Technical architecture docs
-└── README.md
-```
-
-## ⚙️ Prerequisites
-
-### Minikube (Development)
-```bash
 minikube start --cpus=4 --memory=16384 --driver=docker
-minikube tunnel  # Required for LoadBalancer services
+
+# Oder K3s / vanilla K8s Cluster
 ```
 
-### k3s (Production-like)
-- **Ingress**: Traefik (pre-installed)
-- **Storage**: local-path (pre-installed)
-- **Requirements**: 4 CPU cores, 16GB RAM minimum
+### Installation (1 Command)
+
+```bash
+git clone https://github.com/Mosman97/infrastructure.git
+cd infrastructure
+
+./bootstrap/install-argocd.sh
+```
+
+**Was passiert:**
+1. ArgoCD installiert (Helm Chart)
+2. ArgoCD Projects erstellt (iam, observability, infrastructure)
+3. ApplicationSets deployen alle Stacks automatisch
+4. Warten auf Sync (5-10 Minuten)
+
+### Zugriff auf UIs
+
+```bash
+# /etc/hosts erweitern (Minikube)
+echo "127.0.0.1 argocd.local keycloak.local grafana.local" | sudo tee -a /etc/hosts
+
+# Port-Forwards starten
+kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+kubectl port-forward svc/keycloak-service -n iam-system 8443:8080 &
+kubectl port-forward svc/observability-stack-grafana -n observability-system 3000:80 &
+```
+
+**URLs:**
+- ArgoCD: https://localhost:8080
+- Keycloak: http://localhost:8443
+- Grafana: http://localhost:3000
+
+---
+
+## 🔑 Passwörter
+
+### ArgoCD
+```bash
+# Username: admin
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d && echo
+```
+
+### Keycloak
+```bash
+# Username: admin
+kubectl get secret keycloak-initial-admin -n iam-system \
+  -o jsonpath='{.data.password}' | base64 -d && echo
+```
+
+### Grafana (nur Dev)
+```bash
+# Username: admin
+# Password: admin
+```
+
+**Production:** Keine hardcoded Secrets! Nutze Sealed Secrets oder External Secrets Operator.
+
+---
+
+## 📦 Was wird installiert?
+
+| Component | Version | Namespace | Replicas (dev/k8s) | Beschreibung |
+|-----------|---------|-----------|-------------------|--------------|
+| ArgoCD | 9.1.3 | argocd | 1/3 | GitOps Controller |
+| Istio | 1.28.0 | istio-system | - | Service Mesh (mTLS) |
+| Istio Gateway | 1.28.0 | istio-ingress | 1/2-5 (HPA) | TLS Termination |
+| Keycloak | 26.4.2 | iam-system | 1/2 | SSO / OAuth2 / OIDC |
+| PostgreSQL | 18 | iam-system | 1/3 | CNPG Cluster |
+| Loki | 3.5.7 | observability-system | 1/1 | Log Aggregation |
+| Promtail | - | observability-system | DaemonSet | Log Shipper |
+| Grafana | 12.2.1 | observability-system | 1/2 | Dashboards |
+
+---
+
+## 🔧 Konfiguration
+
+### Dev vs Production
+
+**Dev (Minikube):**
+```yaml
+storageClass: standard  # Minikube default
+ingress: false  # Port-Forward
+replicas: 1
+resources: 256Mi/500m
+```
+
+**Production (K8s):**
+```yaml
+storageClass: gp3 / managed-premium / longhorn / nfs-client
+gateway: true  # Istio Gateway + TLS
+replicas: 2-3
+resources: 1Gi/1 CPU
+```
+
+### Hostnames anpassen
+
+**Dev:**
+- argocd.local
+- keycloak.local
+- grafana.local
+
+**Production** (`charts/istio-gateway/values-k8s.yaml`):
+```yaml
+hosts: ["*.yourdomain.com"]
+virtualServices:
+  keycloak:
+    host: "keycloak.yourdomain.com"
+  grafana:
+    host: "grafana.yourdomain.com"
+```
+
+### Resources anpassen
+
+```yaml
+# charts/iam-stack/values-dev.yaml
+keycloak:
+  resources:
+    requests:
+      memory: "512Mi"  # Erhöhen wenn OOMKilled
+      cpu: "500m"
+```
+
+---
+
+## 🏗️ Production Setup
+
+### 1. StorageClass
+
+**Cloud (AWS/Azure/GCP):**
+```yaml
+# Automatisch verfügbar
+storageClass: ""  # = Default (gp3 / managed-premium / standard)
+```
+
+**On-Premise:**
+
+**Option A: Longhorn (empfohlen für HA)**
+```bash
+helm repo add longhorn https://charts.longhorn.io
+helm install longhorn longhorn/longhorn -n longhorn-system --create-namespace
+# → storageClass: longhorn
+```
+
+**Option B: NFS (einfach, kein HA)**
+```bash
+helm repo add nfs-subdir-external-provisioner \
+  https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+helm install nfs-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+  --set nfs.server=192.168.1.10 \
+  --set nfs.path=/export/k8s \
+  --set storageClass.name=nfs-client \
+  -n kube-system
+# → storageClass: nfs-client
+```
+
+### 2. TLS-Zertifikate
+
+**Option A: Let's Encrypt (automatisch)**
+```bash
+# cert-manager installieren
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.3/cert-manager.yaml
+
+# ClusterIssuer
+cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@yourdomain.com  # ANPASSEN
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: istio
+EOF
+
+# Certificate
+cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-tls-cert
+  namespace: istio-ingress
+spec:
+  secretName: wildcard-tls-cert
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+  - "*.yourdomain.com"
+EOF
+```
+
+**Option B: Eigene PKI (Firmen-CA)**
+```bash
+kubectl create secret tls wildcard-tls-cert \
+  --cert=fullchain.pem \
+  --key=privkey.pem \
+  -n istio-ingress
+```
+
+### 3. DNS
+
+```bash
+# LoadBalancer IP holen
+kubectl get svc -n istio-ingress
+
+# A-Records erstellen:
+# *.yourdomain.com  A  <EXTERNAL-IP>
+# Oder einzeln:
+# keycloak.yourdomain.com  A  <EXTERNAL-IP>
+# grafana.yourdomain.com   A  <EXTERNAL-IP>
+```
+
+### 4. Secrets Management
+
+**Sealed Secrets (empfohlen):**
+```bash
+helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
+helm install sealed-secrets sealed-secrets/sealed-secrets -n kube-system
+
+# Secret verschlüsseln
+kubectl create secret generic db-password --from-literal=password=xyz123 \
+  --dry-run=client -o yaml | \
+  kubeseal -o yaml > db-password-sealed.yaml
+
+# In Git committen (verschlüsselt!)
+git add db-password-sealed.yaml
+```
+
+**External Secrets Operator:**
+```bash
+helm repo add external-secrets https://charts.external-secrets.io
+helm install external-secrets external-secrets/external-secrets \
+  -n external-secrets-system --create-namespace
+
+# Nutze AWS Secrets Manager / HashiCorp Vault / etc.
+```
+
+### 5. Backups
+
+**PostgreSQL zu S3/MinIO:**
+```yaml
+# charts/iam-stack/values-k8s.yaml
+postgres:
+  backup:
+    enabled: true
+    destinationPath: "s3://my-bucket/postgres-backups"
+    s3Credentials:
+      accessKeyId: "..."
+      secretAccessKey: "..."
+      region: "eu-central-1"
+    retentionPolicy: "30d"
+```
+
+**Volume Snapshots:**
+```bash
+# Mit Velero
+helm install velero vmware-tanzu/velero \
+  --set configuration.backupStorageLocation[0].bucket=my-backups \
+  --set configuration.volumeSnapshotLocation[0].config.region=eu-central-1
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### ArgoCD App nicht Synced
+
+```bash
+# Status anschauen
+kubectl get app -n argocd
+
+# Details + Fehlermeldung
+kubectl describe app <name> -n argocd
+
+# Manual Sync
+kubectl patch app <name> -n argocd --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
+```
+
+### Pod crasht mit OOMKilled
+
+```bash
+# Events checken
+kubectl get events -n <namespace> --sort-by='.lastTimestamp'
+
+# Resource Usage
+kubectl top pod -n <namespace>
+
+# → Resources erhöhen in values.yaml
+```
+
+### NetworkPolicy blockiert Traffic
+
+```bash
+# Temporär testen ohne NetworkPolicy
+kubectl delete netpol <name> -n <namespace>
+
+# Debug-Pod starten
+kubectl run -it --rm debug --image=nicolaka/netshoot -- /bin/bash
+curl http://service-name.namespace.svc.cluster.local:8080
+```
+
+### Loki zeigt keine Logs
+
+```bash
+# Promtail läuft?
+kubectl get ds promtail -n observability-system
+
+# Promtail Logs
+kubectl logs -n observability-system ds/observability-stack-promtail
+
+# Loki erreichbar?
+kubectl run -it --rm curl --image=curlimages/curl -- \
+  curl http://observability-stack-loki.observability-system.svc:3100/ready
+```
+
+### Keycloak DB Connection Error
+
+```bash
+# PostgreSQL läuft?
+kubectl get cluster -n iam-system
+
+# Instances ready?
+kubectl get pod -n iam-system -l cnpg.io/cluster=keycloak-db
+
+# Connection testen
+kubectl run -it --rm psql --image=postgres:18 -- \
+  psql -h keycloak-db-rw.iam-system.svc -U postgres -d keycloak
+```
+
+---
 
 ## 🧹 Cleanup
 
-### Full Stack Removal
 ```bash
 ./bootstrap/cleanup.sh
+
+# Oder manuell:
+kubectl delete applicationset infrastructure-appset -n argocd
+kubectl delete applications --all -n argocd
+helm uninstall argocd -n argocd
+kubectl delete ns argocd iam-system observability-system istio-system istio-ingress
 ```
 
-### Manual Cleanup
-```bash
-# Delete all applications
-kubectl delete applications -n argocd --all
+---
 
-# Delete namespaces
-kubectl delete namespace iam-system observability-system istio-system istio-ingress argocd
+## 📚 Weiterführende Docs
 
-# Remove CRDs (optional - removes all CustomResourceDefinitions)
-kubectl delete crd $(kubectl get crd | grep 'istio.io\|keycloak.org\|postgresql.cnpg.io' | awk '{print $1}')
-```
+- [ArgoCD Docs](https://argo-cd.readthedocs.io/)
+- [Istio Docs](https://istio.io/latest/docs/)
+- [Keycloak Docs](https://www.keycloak.org/documentation)
+- [CNPG Docs](https://cloudnative-pg.io/)
+- [Loki Docs](https://grafana.com/docs/loki/latest/)
 
-## 🔐 Security Features
+---
 
-### Istio Service Mesh
-- **mTLS**: STRICT mode for all service-to-service communication
-- **Port-Level mTLS**: PERMISSIVE on PostgreSQL port 8000 (internal status endpoint only)
-- **Authorization Policies**: Namespace-level traffic control
-- **Certificate Management**: Automatic rotation via Istio CA
+## 🤝 Contributing
 
-### Application Security
-- **Auto-Generated Secrets**: Keycloak Admin, PostgreSQL passwords (Base64 encoded)
-- **Security Contexts**: runAsNonRoot, readOnlyRootFilesystem, drop ALL capabilities
-- **RBAC**: Least privilege ServiceAccounts for all components
-- **Network Policies**: Zero-Trust network segmentation (production)
+1. Fork repo
+2. Feature-Branch erstellen
+3. Änderungen committen
+4. PR erstellen
 
-### Audit & Compliance
-- **Audit Logging**: All Keycloak events + PostgreSQL logs captured by Loki
-- **Immutable Infrastructure**: GitOps-based deployments with version control
-- **Observability**: Full request tracing via Istio distributed tracing headers
+---
 
-## 📚 Ressourcen
+## 📄 Lizenz
 
-- [Keycloak Documentation](https://www.keycloak.org/documentation)
-- [Keycloak Operator GitHub](https://github.com/keycloak/keycloak-k8s-resources)
+MIT - siehe LICENSE

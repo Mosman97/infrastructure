@@ -1,0 +1,45 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: {{ .Release.Name }}-gateway
+  namespace: istio-ingress
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    {{- range .Values.gateway.servers }}
+    - port:
+        number: {{ .port.number }}
+        name: {{ .port.name }}
+        protocol: {{ .port.protocol }}
+      hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      {{- if .tls }}
+      tls:
+        {{- if .tls.httpsRedirect }}
+        httpsRedirect: {{ .tls.httpsRedirect }}
+        {{- end }}
+        {{- if .tls.mode }}
+        mode: {{ .tls.mode }}
+        {{- end }}
+        {{- if .tls.credentialName }}
+        credentialName: {{ .tls.credentialName }}
+        {{- end }}
+        {{- if .tls.minProtocolVersion }}
+        minProtocolVersion: {{ .tls.minProtocolVersion }}
+        {{- end }}
+        {{- if .tls.maxProtocolVersion }}
+        maxProtocolVersion: {{ .tls.maxProtocolVersion }}
+        {{- end }}
+        {{- if .tls.cipherSuites }}
+        cipherSuites:
+          {{- range .tls.cipherSuites }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}

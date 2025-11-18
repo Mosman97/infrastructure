@@ -1,0 +1,49 @@
+{{- if .Values.virtualServices.keycloak.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: keycloak-vs
+  namespace: iam-system
+spec:
+  hosts:
+    - {{ .Values.virtualServices.keycloak.host | quote }}
+  gateways:
+    - istio-ingress/{{ .Release.Name }}-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: {{ .Values.virtualServices.keycloak.destination.host }}
+            port:
+              number: {{ .Values.virtualServices.keycloak.destination.port }}
+      timeout: 300s
+      retries:
+        attempts: 3
+        perTryTimeout: 60s
+        retryOn: 5xx,reset,connect-failure,refused-stream
+{{- end }}
+---
+{{- if .Values.virtualServices.grafana.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: grafana-vs
+  namespace: observability-system
+spec:
+  hosts:
+    - {{ .Values.virtualServices.grafana.host | quote }}
+  gateways:
+    - istio-ingress/{{ .Release.Name }}-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: {{ .Values.virtualServices.grafana.destination.host }}
+            port:
+              number: {{ .Values.virtualServices.grafana.destination.port }}
+      timeout: 300s
+{{- end }}
