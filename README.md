@@ -5,15 +5,15 @@ GitOps-basierte Kubernetes-Infrastruktur mit ArgoCD, Istio Service Mesh, Keycloa
 ## 🎯 Was ist das?
 
 Produktionsreife Kubernetes-Infrastruktur die automatisch deployt:
-- **ArgoCD** - GitOps Controller (alles aus Git)
-- **Istio** - Service Mesh mit automatischer mTLS-Verschlüsselung
-- **Keycloak** - Identity & Access Management (SSO, OAuth2, OIDC)
-- **PostgreSQL** - Hochverfügbare Datenbank (CNPG Operator, 3 Instances)
+- **ArgoCD** - GitOps Controller
+- **Istio** - Service Mesh mit mTLS-Verschlüsselung
+- **Keycloak** - Identity & Access Management
+- **PostgreSQL** - Hochverfügbare Datenbank
 - **Loki + Grafana** - Logging und Monitoring
 
 **Umgebungen:**
-- `values-dev.yaml` - Minikube (1 Replica, 16GB RAM, weniger Resources)
-- `values-k8s.yaml` - Production (HA, mehr Resources, TLS, LoadBalancer)
+- `values-dev.yaml` - Minikube
+- `values-k8s.yaml` - Production
 
 ---
 
@@ -38,27 +38,25 @@ cd infrastructure
 ```
 
 **Was passiert:**
-1. ArgoCD installiert (Helm Chart)
-2. ArgoCD Projects erstellt (iam, observability, infrastructure)
+1. ArgoCD installiert
+2. ArgoCD Projects erstellt
 3. ApplicationSets deployen alle Stacks automatisch
-4. Warten auf Sync (5-10 Minuten)
+4. Warten auf Sync
 
-### Zugriff auf UIs
+### Zugriff auf die UIs
 
 ```bash
-# /etc/hosts erweitern (Minikube)
+# /etc/hosts erweitern
 echo "127.0.0.1 argocd.local keycloak.local grafana.local" | sudo tee -a /etc/hosts
 
-# Port-Forwards starten
-kubectl port-forward svc/argocd-server -n argocd 8080:443 &
-kubectl port-forward svc/keycloak-service -n iam-system 8443:8080 &
-kubectl port-forward svc/observability-stack-grafana -n observability-system 3000:80 &
+# Minikube Tunnel starten (separates Terminal)
+minikube tunnel
 ```
 
 **URLs:**
-- ArgoCD: https://localhost:8080
-- Keycloak: http://localhost:8443
-- Grafana: http://localhost:3000
+- ArgoCD: http://argocd.local
+- Keycloak: http://keycloak.local
+- Grafana: http://grafana.local
 
 ---
 
@@ -185,8 +183,18 @@ helm install nfs-provisioner nfs-subdir-external-provisioner/nfs-subdir-external
 
 ### 2. TLS-Zertifikate
 
+TLS-Zertifikate werden im Istio-Gateway für HTTPS-Zugriff benötigt.
 
+**Eigenes Zertifikat importieren:**
+```bash
+kubectl create secret tls wildcard-tls-cert \
+  --cert=fullchain.pem \
+  --key=privkey.pem \
+  -n istio-ingress
+```
 
+**Mit cert-manager (Let's Encrypt):**
+Installation und Konfiguration siehe [cert-manager Dokumentation](https://cert-manager.io/docs/).
 
 ### 3. DNS
 
@@ -208,8 +216,6 @@ Für produktive Umgebungen empfiehlt sich ein Tool wie Sealed Secrets oder Exter
 
 ### 5. Backups
 
-
-**Backups:**
 Backup-Lösungen wie Velero oder S3/MinIO können für Datenbank- und Volume-Backups genutzt werden. Details siehe jeweilige Tool-Dokumentation.
 
 ---
