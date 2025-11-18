@@ -78,10 +78,12 @@ kubectl get secret keycloak-initial-admin -n iam-system \
   -o jsonpath='{.data.password}' | base64 -d && echo
 ```
 
+
 ### Grafana (nur Dev)
 ```bash
 # Username: admin
-# Password: admin
+# Password: GrafanaAdminPassword123
+# (wird als Secret grafana-admin-credentials/admin-password im Namespace observability-system erzeugt)
 ```
 
 
@@ -184,17 +186,7 @@ helm install nfs-provisioner nfs-subdir-external-provisioner/nfs-subdir-external
 ### 2. TLS-Zertifikate
 
 
-### 2. TLS-Zertifikate
 
-TLS-Zertifikate können mit cert-manager (z.B. Let's Encrypt) oder mit eigenen Zertifikaten eingebunden werden.
-
-**Beispiel eigenes Zertifikat:**
-```bash
-kubectl create secret tls wildcard-tls-cert \
-  --cert=fullchain.pem \
-  --key=privkey.pem \
-  -n istio-ingress
-```
 
 ### 3. DNS
 
